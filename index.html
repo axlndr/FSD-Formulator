@@ -78,6 +78,9 @@ button:hover{background:var(--fg);color:var(--bg)}
 .status{font-size:.85rem;color:var(--muted);min-height:1.2em;font-weight:300}
 .field{display:grid;gap:10px}
 .fieldlabel{font-family:var(--mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fieldhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#noneToggle{padding:6px 12px;font-size:.68rem}
+#noneToggle[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);opacity:0;pointer-events:none}
 #tonePicker{display:grid;gap:0;border:1px solid var(--line)}
 .tgroup{border-top:1px solid var(--line);padding:0}
@@ -168,7 +171,7 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
       </label>
     </div>
     <div class="field">
-      <div class="fieldlabel" id="toneLabel">Desired (reflective) tone</div>
+      <div class="fieldhead"><div class="fieldlabel" id="toneLabel">Desired (reflective) tone</div><button type="button" id="noneToggle" aria-pressed="false">None</button></div>
       <select id="tone" class="sr" aria-hidden="true" tabindex="-1"></select>
       <div id="toneSelected" class="tsel"><i class="sw" style="--c:#3d3d3b;--hi:#555;--lo:#222"></i><span>No tone selected</span></div>
       <div id="tonePicker" role="radiogroup" aria-labelledby="toneLabel"></div>
@@ -375,14 +378,14 @@ const $ = id => document.getElementById(id);
 const nl=$("nl"), dl=$("dl"), tone=$("tone"), grey=$("grey"), cov=$("cov"), strength=$("strength"), batch=$("batch");
 nl.innerHTML=`<option value="">Select…</option>`+[10,9,8,7,6,5,4,3,2,1].map(l=>`<option value="${l}">Level ${l}</option>`).join("");
 dl.innerHTML=`<option value="">Select…</option>`+[10,9,8,7,6,5,4,3,2,1].map(l=>`<option value="${l}">Level ${l}</option>`).join("");
-{ const ORDER=["None","Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const groups={};
+{ const ORDER=["Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const groups={};
   for(const [k,t] of Object.entries(TONES)){(groups[t.group]??=[]).push(`<option value="${k}">${t.name}</option>`);}
-  tone.innerHTML=`<option value="">Select…</option>`+ORDER.filter(g=>groups[g]).map(g=>`<optgroup label="${g}">${groups[g].join("")}</optgroup>`).join(""); }
+  tone.innerHTML=`<option value="">Select…</option><option value="bare">None (Natural Series alone)</option>`+ORDER.filter(g=>groups[g]).map(g=>`<optgroup label="${g}">${groups[g].join("")}</optgroup>`).join(""); }
 nl.value=""; dl.value=""; tone.value="";
 // Swatch picker that drives the hidden tone select
 const SHORT={blend:"Custom",vcopper:"Vibrant Copper",vred:"Vibrant Red",vrv:"Vibrant Red/Violet",ctrl:"Neutralize NRP (auto base)",ctrlgreen:"Green Base",ctrlblue:"Blue Base",ctrlviolet:"Violet Base",natural:"Neutral",bare:"None"};
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(v)));if(amt>0){r=f(r+(255-r)*amt);g=f(g+(255-g)*amt);b=f(b+(255-b)*amt);}else{r=f(r*(1+amt));g=f(g*(1+amt));b=f(b*(1+amt));}return `rgb(${r},${g},${b})`;}
-{ const ORDER=["None","Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const picker=$("tonePicker");
+{ const ORDER=["Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const picker=$("tonePicker");
   picker.innerHTML=ORDER.map(gname=>{
     const ents=Object.entries(TONES).filter(([k,t])=>t.group===gname);
     const items=ents.map(([k,t])=>`<button type="button" class="chip" role="radio" aria-checked="false" data-tone="${k}" style="--c:${t.hex};--hi:${shade(t.hex,.35)};--lo:${shade(t.hex,-.45)}"><i class="sw"></i><span>${SHORT[k]||t.name}</span></button>`).join("");
@@ -400,7 +403,9 @@ function syncPicker(){
   document.querySelectorAll("#tonePicker details").forEach(d=>{ const mine=t&&t.group===d.dataset.group; d.querySelector(".gsel").textContent=mine?(SHORT[tone.value]||t.name).replace(/:.*$/,""):""; });
   if(t){ sel.querySelector("span").textContent=(SHORT[tone.value]||t.name).replace(/:.*$/,""); sw.style.setProperty("--c",t.hex); sw.style.setProperty("--hi",shade(t.hex,.35)); sw.style.setProperty("--lo",shade(t.hex,-.45)); }
   else { sel.querySelector("span").textContent="No tone selected"; sw.style.setProperty("--c","#3d3d3b"); sw.style.setProperty("--hi","#555"); sw.style.setProperty("--lo","#222"); }
-  $("blendPanel").hidden = tone.value!=="blend"; }
+  $("blendPanel").hidden = tone.value!=="blend";
+  const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("tonePicker").hidden=isNone;
+  if(isNone) document.querySelectorAll("#tonePicker details[open]").forEach(d=>d.open=false); }
 
 /* ---------- Blend ring: Pure Tones placed by hue ---------- */
 // Two rings, each placed by the tone's own hue (0 = east, counter-clockwise positive). key = chart family, for NRP logic.
@@ -899,6 +904,7 @@ $("copy").addEventListener("click",()=>{
 });
 function hairLabel(){ const t=$("texture"),ty=$("htype"),de=$("density"),sc=$("scalp"); const parts=[t.value!==""&&t.options[t.selectedIndex].text.split(" · ")[0], ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
 [nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ hairLabel(); compute(); }));
+$("noneToggle").addEventListener("click",()=>{ tone.value = tone.value==="bare" ? "" : "bare"; syncPicker(); compute(); });
 $("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; hairLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.ang=30; blend.pair=null; $("pairToggle").setAttribute("aria-pressed","false"); $("ratioChips").hidden=true; syncPresets(); syncPicker(); compute(); nl.focus(); });
 compute();
 </script>
