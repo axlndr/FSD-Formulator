@@ -722,7 +722,10 @@ function compute(){
     notes.push("Red Base lifts on its own alkalinity to about level 7; the Natural Series shade from the chart is replaced, not added. For a lighter red, mix Red Base with 12N in equal parts.");
     notes.push("A higher Color Catalyst volume does not intensify red; it reduces saturation. Stay on 20 Volume.");
     if(gy>0){ warn="Bright Base is not recommended for grey coverage. For grey with a red reflection, use the Natural Series Red/Red or Copper family with the N/N split instead."; }
-    render({kicker,shade:shadeOut,rows,dev:`${ml(catalystBase*2)} · 20 Volume`,time:"30 min, room temperature",notes,why,warn});
+    let alt=null;
+    if(isLight){ const altRows=[[g(10*mult),"Red Base"],[g(10*mult),"12N"],[g(4*mult*k),pt]]; const altCat=altRows.reduce((a,r)=>a+parseFloat(r[0]),0)*2;
+      alt={rows:altRows,dev:`${ml(altCat)} · 20 Volume`,sub:"Where Bright Base is not available (North America): 12N in equal parts with Red Base instead, following the Red Base guideline for a lighter result. Expect slightly more deposit and a touch more control over warmth than the Bright Base version.",kicker:"Alternative · without Bright Base"}; }
+    render({kicker,shade:shadeOut,rows,dev:`${ml(catalystBase*2)} · 20 Volume`,time:"30 min, room temperature",notes,why,warn,alt});
     return;
   }
 
@@ -871,7 +874,7 @@ function render(o){
   $("outKicker").textContent=o.kicker; $("outShade").textContent=o.shade;
   $("outMix").innerHTML=mixRows(o.rows,o.dev);
   $("outAlt").hidden=!o.alt;
-  if(o.alt){ $("outAltKicker").textContent="Alternative · Pure Tone route"; $("outAltSub").textContent=o.alt.sub; $("outAltMix").innerHTML=mixRows(o.alt.rows,o.alt.dev); }
+  if(o.alt){ $("outAltKicker").textContent=o.alt.kicker||"Alternative · Pure Tone route"; $("outAltSub").textContent=o.alt.sub; $("outAltMix").innerHTML=mixRows(o.alt.rows,o.alt.dev); }
   $("outDev").textContent=o.dev; $("outTime").textContent=o.time;
   $("outNotes").innerHTML=o.notes.map(x=>`<li>${x}</li>`).join("");
   $("outWhy").innerHTML=o.why.map(x=>`<li>${x}</li>`).join("");
