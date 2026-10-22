@@ -342,6 +342,7 @@ const TEMP = k => ["gold","copper","rr","rv","pink"].includes(k) ? "warm" : k===
 
 // Tonal families: light Pure Tone (shades 8–14), dark Pure Tone (shades 4–7). null = not charted at that range.
 const TONES = {
+  bare:      {name:"None (Natural Series alone)", group:"Neutral-Beige", light:null, dark:null, code:"N",   hex:"#6b5a4e", none:true, bare:true},
   natural:   {name:"Neutral (neutralize NRP)",    group:"Neutral-Beige", light:null, dark:null, code:"N",   hex:"#7a5c48", none:true},
   matte:     {name:"Matte",                       group:"Matte-Olive", light:"Light Y/G",   dark:"Dark G/Y",      code:"Y/G·G/Y", hex:"#8f8c3e"},
   gold:      {name:"Gold",                        group:"Warm", light:"Light Y/O",   dark:"Dark Y/O",      code:"Y/O", hex:"#c99a3c"},
@@ -376,7 +377,7 @@ dl.innerHTML=`<option value="">Select…</option>`+[10,9,8,7,6,5,4,3,2,1].map(l=
   tone.innerHTML=`<option value="">Select…</option>`+ORDER.filter(g=>groups[g]).map(g=>`<optgroup label="${g}">${groups[g].join("")}</optgroup>`).join(""); }
 nl.value=""; dl.value=""; tone.value="";
 // Swatch picker that drives the hidden tone select
-const SHORT={blend:"Custom",vcopper:"Vibrant Copper",vred:"Vibrant Red",vrv:"Vibrant Red/Violet",ctrl:"Neutralize NRP (auto base)",ctrlgreen:"Green Base",ctrlblue:"Blue Base",ctrlviolet:"Violet Base",natural:"Neutral"};
+const SHORT={blend:"Custom",vcopper:"Vibrant Copper",vred:"Vibrant Red",vrv:"Vibrant Red/Violet",ctrl:"Neutralize NRP (auto base)",ctrlgreen:"Green Base",ctrlblue:"Blue Base",ctrlviolet:"Violet Base",natural:"Neutral",bare:"None"};
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(v)));if(amt>0){r=f(r+(255-r)*amt);g=f(g+(255-g)*amt);b=f(b+(255-b)*amt);}else{r=f(r*(1+amt));g=f(g*(1+amt));b=f(b*(1+amt));}return `rgb(${r},${g},${b})`;}
 { const ORDER=["Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const picker=$("tonePicker");
   picker.innerHTML=ORDER.map(gname=>{
@@ -387,7 +388,7 @@ function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n
   picker.querySelector('details[data-group="Custom"]').appendChild($("blendPanel"));
   picker.addEventListener("toggle",e=>{ const d=e.target; if(d.open){ picker.querySelectorAll("details[open]").forEach(o=>{ if(o!==d) o.open=false; }); if(d.dataset.group==="Custom" && tone.value!=="blend"){ tone.value="blend"; syncPicker(); compute(); } } },true);
   picker.querySelector('details[data-group="Custom"] .chips').hidden=true;
-  picker.addEventListener("click",e=>{const b=e.target.closest(".chip"); if(!b) return; tone.value=b.dataset.tone; syncPicker(); compute(); const d=b.closest("details"); if(d&&tone.value!=="blend") d.open=false;});
+  picker.addEventListener("click",e=>{const b=e.target.closest(".chip"); if(!b) return; tone.value = tone.value===b.dataset.tone ? "" : b.dataset.tone; syncPicker(); compute(); const d=b.closest("details"); if(d&&tone.value!=="blend") d.open=false;});
 }
 function syncPicker(){
   document.querySelectorAll("#tonePicker .chip").forEach(b=>b.setAttribute("aria-checked", b.dataset.tone===tone.value ? "true":"false"));
@@ -734,7 +735,7 @@ function compute(){
   /* --- Natural Series formulas --- */
   const baseName = split ? shades.map(s=>s+"N") : [shades[0]+"N"];
   const baseG = split ? 10*mult : 20*mult;
-  shadeOut = t.blend ? `${cell} ${blendLabel()}` : `${cell} ${t.code==="N"?"Natural":t.code.includes("·")?(isLight?t.code.split("·")[0]:t.code.split("·")[1]):t.code}`;
+  shadeOut = t.blend ? `${cell} ${blendLabel()}` : `${cell} ${t.bare?"Natural":t.code==="N"?"Neutral":t.code.includes("·")?(isLight?t.code.split("·")[0]:t.code.split("·")[1]):t.code}`;
 
   if(t.ctrl){
     const base=BASE_FOR_NRP(d);
@@ -796,7 +797,8 @@ function compute(){
   const base=BASE_FOR_NRP(d);
   // decide: "none" | "base" | "split" (neutralizer + reflection) | "neut" (neutralizer alone)
   let plan="none", reason="", ptPlan=null;
-  if(exposure==="none" || mode==="chart" || mode==="enhance"){
+  if(t.bare){ plan="none"; reason=`No reflective tone chosen: the ${shadeLabel} Natural Series shade goes on alone. Its cool-brown base neutralizes the ${nrp.toLowerCase()} NRP for a natural result, as the deck describes.`; }
+  else if(exposure==="none" || mode==="chart" || mode==="enhance"){
     plan="none";
     reason = exposure==="none" ? `No lift, so no NRP is exposed; the ${shadeLabel} cool-brown base deposits over the existing level.`
            : mode==="chart" ? "Chart formula as printed; NRP left to the Natural Series base." : `Enhancing: the ${nrp.toLowerCase()} NRP is allowed to show through the reflection.`;
