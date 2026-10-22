@@ -90,6 +90,8 @@ button:hover{background:var(--fg);color:var(--bg)}
 .tgroup summary .dots i{width:9px;height:9px;border-radius:50%;background:var(--c);display:block}
 .tgroup summary .gsel{font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--accent);font-size:.85rem}
 .tgroup .chips{padding:4px 12px 12px}
+.chips.nonerow{grid-template-columns:1fr;padding:8px 12px;border-bottom:0}
+.nonerow .chip{justify-content:center}
 .tsel{display:flex;align-items:center;gap:10px;font-size:.95rem}
 .tsel .sw{flex:0 0 22px;width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:radial-gradient(circle at 35% 30%,var(--hi),var(--c) 55%,var(--lo) 100%)}
 .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -342,7 +344,7 @@ const TEMP = k => ["gold","copper","rr","rv","pink"].includes(k) ? "warm" : k===
 
 // Tonal families: light Pure Tone (shades 8–14), dark Pure Tone (shades 4–7). null = not charted at that range.
 const TONES = {
-  bare:      {name:"None (Natural Series alone)", group:"Neutral-Beige", light:null, dark:null, code:"N",   hex:"#6b5a4e", none:true, bare:true},
+  bare:      {name:"None (Natural Series alone)", group:"None", light:null, dark:null, code:"N",   hex:"#6b5a4e", none:true, bare:true},
   natural:   {name:"Neutral (neutralize NRP)",    group:"Neutral-Beige", light:null, dark:null, code:"N",   hex:"#7a5c48", none:true},
   matte:     {name:"Matte",                       group:"Matte-Olive", light:"Light Y/G",   dark:"Dark G/Y",      code:"Y/G·G/Y", hex:"#8f8c3e"},
   gold:      {name:"Gold",                        group:"Warm", light:"Light Y/O",   dark:"Dark Y/O",      code:"Y/O", hex:"#c99a3c"},
@@ -372,17 +374,18 @@ const $ = id => document.getElementById(id);
 const nl=$("nl"), dl=$("dl"), tone=$("tone"), grey=$("grey"), cov=$("cov"), strength=$("strength"), batch=$("batch");
 nl.innerHTML=`<option value="">Select…</option>`+[10,9,8,7,6,5,4,3,2,1].map(l=>`<option value="${l}">Level ${l}</option>`).join("");
 dl.innerHTML=`<option value="">Select…</option>`+[10,9,8,7,6,5,4,3,2,1].map(l=>`<option value="${l}">Level ${l}</option>`).join("");
-{ const ORDER=["Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const groups={};
+{ const ORDER=["None","Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const groups={};
   for(const [k,t] of Object.entries(TONES)){(groups[t.group]??=[]).push(`<option value="${k}">${t.name}</option>`);}
   tone.innerHTML=`<option value="">Select…</option>`+ORDER.filter(g=>groups[g]).map(g=>`<optgroup label="${g}">${groups[g].join("")}</optgroup>`).join(""); }
 nl.value=""; dl.value=""; tone.value="";
 // Swatch picker that drives the hidden tone select
 const SHORT={blend:"Custom",vcopper:"Vibrant Copper",vred:"Vibrant Red",vrv:"Vibrant Red/Violet",ctrl:"Neutralize NRP (auto base)",ctrlgreen:"Green Base",ctrlblue:"Blue Base",ctrlviolet:"Violet Base",natural:"Neutral",bare:"None"};
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(v)));if(amt>0){r=f(r+(255-r)*amt);g=f(g+(255-g)*amt);b=f(b+(255-b)*amt);}else{r=f(r*(1+amt));g=f(g*(1+amt));b=f(b*(1+amt));}return `rgb(${r},${g},${b})`;}
-{ const ORDER=["Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const picker=$("tonePicker");
+{ const ORDER=["None","Neutral-Beige","Warm","Cool","Matte-Olive","Vibrant Reds","Custom","Controlling Base"]; const picker=$("tonePicker");
   picker.innerHTML=ORDER.map(gname=>{
     const ents=Object.entries(TONES).filter(([k,t])=>t.group===gname);
     const items=ents.map(([k,t])=>`<button type="button" class="chip" role="radio" aria-checked="false" data-tone="${k}" style="--c:${t.hex};--hi:${shade(t.hex,.35)};--lo:${shade(t.hex,-.45)}"><i class="sw"></i><span>${SHORT[k]||t.name}</span></button>`).join("");
+    if(gname==="None") return `<div class="chips nonerow">${items}</div>`;
     const dots=(gname==="Custom"?["#c9933a","#b7742f","#8f8278","#c27a6a","#6a1f3a","#4e5866"].map(c=>`<i style="--c:${c}"></i>`):ents.slice(0,6).map(([k,t])=>`<i style="--c:${t.hex}"></i>`)).join("");
     return `<details class="tgroup" name="tonegroups" data-group="${gname}"><summary><span>${gname}</span><span class="dots">${dots}</span><span class="gsel"></span></summary><div class="chips">${items}</div></details>`; }).join("");
   picker.querySelector('details[data-group="Custom"]').appendChild($("blendPanel"));
