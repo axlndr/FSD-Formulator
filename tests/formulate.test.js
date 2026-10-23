@@ -216,3 +216,12 @@ test("formulate attaches a result colour to the formula and its alternative", ()
   const r=formulate({nl:"5",dl:"8",tone:"blueash",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}});
   assert.match(r.result,/^#[0-9a-f]{6}$/); if(r.alt) assert.match(r.alt.result,/^#[0-9a-f]{6}$/);
 });
+
+test("porosity pre-treatment notes", () => {
+  const base={nl:"5",dl:"8",tone:"copper",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
+  const n=p=>formulate({...base,porosity:p}).notes.join(" | ");
+  assert.ok(!/Pre-treat/.test(n("medium")));
+  assert.ok(/Equalizing Primer, up to 30 sprays \(30 ml\)/.test(n("medhigh")) && !/Bond-Building/.test(n("medhigh")));
+  assert.ok(/Equalizing Primer/.test(n("high")) && /Bond-Building and Strengthening/.test(n("high")));
+  assert.ok(/Bond-Building and Strengthening/.test(n("compromised")) && !/Equalizing Primer/.test(n("compromised")));
+});

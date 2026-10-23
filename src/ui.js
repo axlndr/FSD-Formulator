@@ -69,12 +69,18 @@ function drawVariables(){
   $("texStrip").innerHTML=tex.map(([v,l,a])=>vtile("",v,l,strandSVG(...a),$("htype").value===v)).join("");
   const den=[["-1","Thin",4],["0","Medium",8],["1","Thick",14]];
   $("denStrip").innerHTML=den.map(([v,l,n])=>{ let p=""; for(let i=0;i<n;i++){ const x=6+(28*(i+0.5)/n); p+=`<path d="M${x},4 C${x+1.5},24 ${x-1.5},44 ${x},60" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`; } return vtile("",v,l,p,$("density").value===v); }).join("");
+  // porosity: the cuticle from flat and closed to lifted and broken
+  const por=[["low","Low",0.6,0],["medium","Medium",1.4,0],["medhigh","Med–high",2.4,0],["high","High",3.4,1],["compromised","Compromised",4.4,2]];
+  $("porStrip").innerHTML=por.map(([v,l,lift,broken])=>{ let out=`<rect x="12" y="2" width="16" height="60" rx="8" fill="currentColor" fill-opacity=".18"/>`;
+    for(let y=8,i=0;y<60;y+=6.5,i++){ const gap=broken&&i%3===1 ? 1 : 0; out+=`<path d="M12,${y} q4,${lift} 8,0 t8,0" fill="none" stroke="currentColor" stroke-opacity="${gap?.25:.6}" stroke-width="${.8+lift*.18}" stroke-linecap="round"/>`; if(broken===2&&i%2) out+=`<path d="M${22+(i%3)*2},${y-1} l3,${-2.5}" stroke="currentColor" stroke-opacity=".6" stroke-width="1" stroke-linecap="round"/>`; }
+    return vtile("",v,l,out,$("porosity").value===v); }).join("");
+  { const se=$("porosity"); const o=se.options[se.selectedIndex]; $("porVal").textContent=se.value?o.text:"Select"; $("porVal").classList.toggle("empty",!se.value); }
   const pv=$("patVal"); const pat=PATTERNS.find(x=>x[0]===patternCode); pv.textContent=pat?`${pat[0]} · ${pat[2]}`:"Select"; pv.classList.toggle("empty",!pat);
   for(const [sel,val] of [["htype","texVal"],["density","denVal"]]){ const se=$(sel); const o=se.options[se.selectedIndex]; $(val).textContent=se.value?o.text:"Select"; $(val).classList.toggle("empty",!se.value); }
   $("scalpOn").setAttribute("aria-pressed",String($("scalp").value==="on")); $("scalpOff").setAttribute("aria-pressed",String($("scalp").value==="off"));
 }
 $("patStrip").addEventListener("click",e=>{ const b=e.target.closest(".vt"); if(!b) return; const se=$("texture"); if(patternCode===b.dataset.code){ patternCode=""; se.value=""; } else { patternCode=b.dataset.code; se.value=b.dataset.v; } se.dispatchEvent(new Event("change",{bubbles:true})); });
-for(const [strip,sel] of [["texStrip","htype"],["denStrip","density"]]) $(strip).addEventListener("click",e=>{ const b=e.target.closest(".vt"); if(!b) return; const se=$(sel); se.value = se.value===b.dataset.v ? "" : b.dataset.v; se.dispatchEvent(new Event("change",{bubbles:true})); });
+for(const [strip,sel] of [["texStrip","htype"],["denStrip","density"],["porStrip","porosity"]]) $(strip).addEventListener("click",e=>{ const b=e.target.closest(".vt"); if(!b) return; const se=$(sel); se.value = se.value===b.dataset.v ? "" : b.dataset.v; se.dispatchEvent(new Event("change",{bubbles:true})); });
 $("scalpOn").addEventListener("click",()=>{ $("scalp").value="on"; $("scalp").dispatchEvent(new Event("change",{bubbles:true})); });
 $("scalpOff").addEventListener("click",()=>{ $("scalp").value="off"; $("scalp").dispatchEvent(new Event("change",{bubbles:true})); });
 function syncLevels(){
@@ -209,7 +215,7 @@ function blendReadout(isLight,k,list){
 
 /* ---------- Compute + render ---------- */
 function readInputs(){ return {nl:nl.value, dl:dl.value, tone:tone.value, grey:grey.value, cov:cov.value, strength:strength.value, batch:batch.value, nrpMode:$("nrpMode").value,
-  texture:$("texture").value, htype:$("htype").value, density:$("density").value, scalp:$("scalp").value, blend:{...blend}}; }
+  texture:$("texture").value, htype:$("htype").value, density:$("density").value, porosity:$("porosity").value, scalp:$("scalp").value, blend:{...blend}}; }
 
 function compute(){
   const r=formulate(readInputs());
@@ -286,11 +292,11 @@ try{ if(localStorage.getItem("fsd-howto-seen")){ $("howto").open=false; } else {
 
 /* Advanced row summary */
 function advLabel(){ const sel=id=>$(id).options[$(id).selectedIndex].text.split(" (")[0]; $("advSel").textContent=`NRP ${sel("nrpMode")} · ${sel("strength")} · ${sel("batch").replace(" base","")}`; }
-function hairLabel(){ const ty=$("htype"),de=$("density"),sc=$("scalp"); const parts=[patternCode, ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
-[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncGrey(); syncVals(); drawVariables(); hairLabel(); advLabel(); compute(); }));
+function hairLabel(){ const ty=$("htype"),de=$("density"),po=$("porosity"),sc=$("scalp"); const parts=[patternCode, ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, po.value!==""&&po.options[po.selectedIndex].text+" porosity", sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
+[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("porosity"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncGrey(); syncVals(); drawVariables(); hairLabel(); advLabel(); compute(); }));
 $("noneToggle").addEventListener("click",()=>{ if(tone.value!=="bare"){ tone.value="bare"; syncPicker(); compute(); } });
 $("toneMode").addEventListener("click",()=>{ if(tone.value==="bare"){ tone.value=""; syncPicker(); compute(); } });
-$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; patternCode=""; syncLevels(); syncGrey(); syncVals(); drawVariables(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; openFam=null; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
+$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("porosity").value=""; $("scalp").value="on"; patternCode=""; syncLevels(); syncGrey(); syncVals(); drawVariables(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; openFam=null; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
 syncLevels(); syncGrey(); syncVals(); drawVariables(); advLabel(); compute();
 
 /* ---------- Offline / installable (GitHub Pages only; the artifact wrapper has no service worker scope) ---------- */
