@@ -71,17 +71,35 @@ fieldset{border:0;padding:0;margin:0;display:grid;gap:22px;min-width:0}
 .seg button{padding:5px 14px;border-radius:7px;font-size:14px;font-weight:400;color:var(--fg2);transition:background .2s var(--ease),color .2s var(--ease)}
 .seg button[aria-pressed="true"]{background:rgba(255,255,255,.2);color:var(--fg);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 #tonePicker{display:grid}
-.tfam .gsel{color:var(--ink)}
+.wheelbox{position:relative;width:min(100%,360px);margin:4px auto 0;padding:0 16px 34px}
+.cwheel{position:relative;width:76%;margin:0 auto;aspect-ratio:1}
+.wedge{position:absolute;inset:2%;border-radius:50%;background:var(--grad);transition:filter .25s var(--ease)}
+.wedge.q0{clip-path:inset(0 0 50% 50%)} .wedge.q1{clip-path:inset(50% 0 0 50%)} .wedge.q2{clip-path:inset(50% 50% 0 0)} .wedge.q3{clip-path:inset(0 50% 50% 0)}
+.wedge span,.hub span{position:absolute;font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);white-space:nowrap}
+.wedge.q0 span{left:69%;top:30%;transform:translate(-50%,-50%)} .wedge.q1 span{left:71%;top:72%;transform:translate(-50%,-50%)}
+.wedge.q2 span{left:29%;top:72%;transform:translate(-50%,-50%)} .wedge.q3 span{left:31%;top:30%;transform:translate(-50%,-50%)}
+.wedge:hover,.hub:hover{filter:brightness(1.1)}
+.wedge[aria-pressed="true"],.hub[aria-pressed="true"]{filter:brightness(1.18)}
+.hub{position:absolute;left:32%;top:32%;width:36%;height:36%;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--c2),var(--c) 70%);display:grid;place-items:center}
+.hub span{position:static}
+.wsvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.wsvg path,.wsvg circle{fill:none;stroke:var(--mat-solid);stroke-width:3;stroke-linejoin:round;transition:stroke .25s var(--ease)}
+.wsvg .on{stroke:#fff;stroke-width:3.5}
+.corner{position:absolute;bottom:0;width:24%;max-width:80px}
+.corner.cl{left:0} .corner.cr{right:0}
+.corner span{font-size:11px}
+.corner.cr i{background:conic-gradient(var(--c) 0 120deg,var(--c2) 120deg 240deg,var(--c3) 240deg 360deg)}
+.palette{display:grid;gap:10px;padding:14px 16px 16px;margin-top:10px;box-shadow:inset 0 1px 0 var(--hair)}
+.gsel{color:var(--ink)}
 .tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;min-width:0}
-.tile{display:grid;gap:5px;min-width:0;justify-items:center;transition:transform .25s var(--ease)}
-.tile i{display:block;width:100%;height:48px;border-radius:var(--r-sm);background:radial-gradient(120% 90% at 30% 20%,var(--hi),var(--c) 55%,var(--lo) 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+.tile{display:grid;gap:5px;min-width:0;justify-items:center}
+.tile i{display:block;width:100%;height:48px;border-radius:var(--r-sm);background:linear-gradient(180deg,color-mix(in srgb,var(--c) 82%,#fff) 0%,var(--c) 55%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
 .tile span{font-size:11px;line-height:1.2;color:var(--fg2);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .tile:hover i{transform:translateY(-1px)}
 .tile[aria-checked="true"] i{transform:scale(1.08);box-shadow:0 0 0 2.5px var(--mat-solid),0 0 0 5px #fff}
 .tile[aria-checked="true"] span{color:var(--fg);font-weight:700}
-.wheeltile i{background:conic-gradient(from 200deg,#c99a3c,#c6612c,#9b2a2a,#7b2f5a,#5a3d7a,#4a5f8a,#5c6670,#3f5a46,#8f8c3e,#c99a3c)}
-.wheeltile i{position:relative}
-.wheeltile i::after{content:"";position:absolute;left:50%;top:50%;width:38%;height:38%;transform:translate(-50%,-50%);border-radius:50%;background:#a39d99;opacity:.9}
+.wheeltile i{position:relative;background:conic-gradient(from 200deg,#e9b23c,#ec6a2a,#d32d2d,#b23a86,#7f4fc2,#4f7fd6,#6f8a96,#3f8a56,#c3bf3a,#e9b23c)}
+.wheeltile i::after{content:"";position:absolute;left:50%;top:50%;width:38%;height:38%;transform:translate(-50%,-50%);border-radius:50%;background:#bdb6b0}
 @media (min-width:900px){.tiles{grid-template-columns:repeat(7,minmax(0,1fr))}}
 .blend{display:grid;gap:14px;padding:4px 16px 16px;box-shadow:inset 0 1px 0 var(--hair)}
 .pchips{display:flex;flex-wrap:wrap;gap:6px}

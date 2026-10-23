@@ -34,21 +34,48 @@ function syncVals(){
 
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(v)));if(amt>0){r=f(r+(255-r)*amt);g=f(g+(255-g)*amt);b=f(b+(255-b)*amt);}else{r=f(r*(1+amt));g=f(g*(1+amt));b=f(b*(1+amt));}return `rgb(${r},${g},${b})`;}
 
-/* ---------- Tone picker: one row per family, tones as colour tiles (same treatment as the level strips) ---------- */
+/* ---------- Tone picker: a wheel of tonal categories with Neutral-Beige at the hub; tap a wedge to open its palette ---------- */
+const hexRGB=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
 const TILE={natural:"Neutral",beigeash:"Beige Ash",gold:"Gold",copper:"Copper",rr:"Red/Red",rv:"Red/Violet",pink:"Pink",grey:"Grey",greyash:"Grey Ash",blueash:"Blue Ash",violetash:"Violet Ash",violet:"Violet",
   matte:"Matte",imatte:"Intense Matte",vcopper:"Copper",vred:"Red",vrv:"Red/Violet",ctrl:"Auto base",ctrlgreen:"Green",ctrlblue:"Blue",ctrlviolet:"Violet",blend:"Custom"};
+// Display colours: the formulation hexes are realistic hair tones; for tiles we show them cleaner and more saturated.
+function vivid(hex){ const [h,s,l]=rgb2hsl(hexRGB(hex)); const S=Math.min(.74,s*1.2+.05), L=Math.min(.58,Math.max(.44,l+.1)); const c=hsl2rgb(h,S,L).map(v=>Math.round(v)); return `rgb(${c[0]},${c[1]},${c[2]})`; }
+const WEDGES=[ // clockwise from 12 o'clock, 90° each
+  {fam:"Warm", from:0,   stops:["gold","copper","rr","rv","pink"]},
+  {fam:"Vibrant Reds", from:90, stops:["vcopper","vred","vrv"]},
+  {fam:"Cool", from:180, stops:["violet","violetash","blueash","greyash","grey"]},
+  {fam:"Matte-Olive", from:270, stops:["imatte","matte"]} ];
+let openFam=null;
 { const picker=$("tonePicker");
-  picker.innerHTML=ORDER.map(gname=>{
-    const ents=Object.entries(TONES).filter(([k,t])=>t.group===gname);
-    const tiles=ents.map(([k,t])=>`<button type="button" class="tile${t.blend?" wheeltile":""}" role="radio" aria-checked="false" data-tone="${k}" style="--c:${t.hex};--hi:${shade(t.hex,.3)};--lo:${shade(t.hex,-.4)}" aria-label="${TONES[k].name}"><i></i><span>${TILE[k]||t.name}</span></button>`).join("");
-    return `<div class="item stack tfam" data-group="${gname}"><div class="itemhead"><span class="lbl">${gname}</span><span class="val gsel"></span></div><div class="tiles">${tiles}</div></div>`; }).join("");
-  picker.querySelector('.tfam[data-group="Custom"]').after($("blendPanel"));
-  picker.addEventListener("click",e=>{const b=e.target.closest(".tile"); if(!b) return; tone.value = tone.value===b.dataset.tone ? "" : b.dataset.tone; syncPicker(); compute();});
+  const grad=w=>{ const n=w.stops.length; return `conic-gradient(from ${w.from}deg,${w.stops.map((k,i)=>`${vivid(TONES[k].hex)} ${(i/(n-1))*90}deg`).join(",")})`; };
+  const quad="M100,4 A96,96 0 0 1 196,100 L136,100 A36,36 0 0 0 100,64 Z";
+  picker.innerHTML=`<div class="wheelbox">
+    <div class="cwheel">
+      ${WEDGES.map((w,i)=>`<button type="button" class="wedge q${i}" data-fam="${w.fam}" aria-pressed="false" style="--grad:${grad(w)}"><span>${w.fam.replace("-Olive","")}</span></button>`).join("")}
+      <button type="button" class="hub" data-fam="Neutral-Beige" aria-pressed="false" style="--c:${vivid(TONES.natural.hex)};--c2:${vivid(TONES.beigeash.hex)}"><span>Neutral</span></button>
+      <svg class="wsvg" viewBox="0 0 200 200" aria-hidden="true">${[0,90,180,270].map(a=>`<path d="${quad}" transform="rotate(${a} 100 100)"/>`).join("")}<circle cx="100" cy="100" r="36"/></svg>
+    </div>
+    <button type="button" class="corner cl tile wheeltile" data-tone="blend" role="radio" aria-checked="false"><i></i><span>Custom</span></button>
+    <button type="button" class="corner cr tile" data-fam="Controlling Base" aria-pressed="false" style="--c:#2d4f8f;--c2:#5a3f8f;--c3:#2f7a4a"><i class="bases"></i><span>Controlling Base</span></button>
+  </div>
+  <div class="palette" id="palette" hidden><div class="itemhead"><span class="lbl" id="palName"></span><span class="val gsel" id="palSel"></span></div><div class="tiles" id="palTiles"></div></div>`;
+  picker.appendChild($("blendPanel"));
+  picker.addEventListener("click",e=>{
+    const t=e.target.closest(".tile[data-tone]"); if(t){ tone.value = tone.value===t.dataset.tone ? "" : t.dataset.tone; if(tone.value==="blend") openFam=null; syncPicker(); compute(); return; }
+    const f=e.target.closest("[data-fam]"); if(f){ openFam = openFam===f.dataset.fam ? null : f.dataset.fam; if(openFam && tone.value==="blend"){ tone.value=""; compute(); } syncPicker(); }
+  });
 }
 function syncPicker(){
-  document.querySelectorAll("#tonePicker .tile").forEach(b=>b.setAttribute("aria-checked", b.dataset.tone===tone.value ? "true":"false"));
   const t=TONES[tone.value];
-  document.querySelectorAll("#tonePicker .tfam").forEach(d=>{ const mine=t&&t.group===d.dataset.group; d.querySelector(".gsel").textContent=mine?(SHORT[tone.value]||t.name).replace(/:.*$/,""):""; });
+  if(t && !t.blend && !t.bare && openFam==null) openFam=t.group;
+  document.querySelectorAll("#tonePicker [data-fam]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.fam===openFam)));
+  document.querySelectorAll("#tonePicker .wsvg path, #tonePicker .wsvg circle").forEach((el,i)=>{ const fam=i<4?WEDGES[i].fam:"Neutral-Beige"; el.classList.toggle("on", !!t && !t.blend && t.group===fam); });
+  const pal=$("palette");
+  if(openFam){ const ents=Object.entries(TONES).filter(([k,x])=>x.group===openFam);
+    $("palName").textContent=openFam; $("palSel").textContent = t&&t.group===openFam ? (SHORT[tone.value]||t.name).replace(/:.*$/,"") : "";
+    $("palTiles").innerHTML=ents.map(([k,x])=>`<button type="button" class="tile" role="radio" aria-checked="${k===tone.value}" data-tone="${k}" style="--c:${vivid(x.hex)}" aria-label="${x.name}"><i></i><span>${TILE[k]||x.name}</span></button>`).join("");
+    pal.hidden=false; } else pal.hidden=true;
+  document.querySelectorAll("#tonePicker .corner.tile[data-tone]").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.tone===tone.value)));
   $("blendPanel").hidden = tone.value!=="blend";
   const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; }
 
@@ -57,7 +84,6 @@ const R=96, LT0=R+4, LT1=R+22, RIM0=R+25, RIM1=R+43, DK0=R+46, DK1=R+64, CX=180,
 function rgb2hsl(c){const r=c[0]/255,g=c[1]/255,b=c[2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0;const l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?((g-b)/d+(g<b?6:0)):mx===g?((b-r)/d+2):((r-g)/d+4);h*=60;}return [h,s,l];}
 function hsl2rgb(h,s,l){const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return [f(0)*255,f(8)*255,f(4)*255];}
 const pol=(a,r)=>[CX+r*Math.cos(a*Math.PI/180), CY-r*Math.sin(a*Math.PI/180)];
-const hexRGB=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
 function hueAt(ang,ring){
   let a=null,b=null,f=0;
   for(let i=0;i<ring.length;i++){ const A=ring[i], B=ring[(i+1)%ring.length]; let span=norm(B.ang-A.ang); if(span>0) span-=360; let off=norm(ang-A.ang); if(off>0) off-=360;
@@ -212,7 +238,7 @@ function hairLabel(){ const t=$("texture"),ty=$("htype"),de=$("density"),sc=$("s
 [nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncVals(); hairLabel(); advLabel(); compute(); }));
 $("noneToggle").addEventListener("click",()=>{ if(tone.value!=="bare"){ tone.value="bare"; syncPicker(); compute(); } });
 $("toneMode").addEventListener("click",()=>{ if(tone.value==="bare"){ tone.value=""; syncPicker(); compute(); } });
-$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; syncLevels(); syncVals(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
+$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; syncLevels(); syncVals(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; openFam=null; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
 syncLevels(); syncVals(); advLabel(); compute();
 
 /* ---------- Offline / installable (GitHub Pages only; the artifact wrapper has no service worker scope) ---------- */
