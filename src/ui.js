@@ -127,7 +127,7 @@ function compute(){
     $("outKicker").textContent="Waiting for input"; $("outShade").textContent="—"; $("outSub").textContent=`Choose the ${r.missing.join(", ").replace(/, ([^,]*)$/," and $1")} to see a formula.`;
     $("outMix").innerHTML=""; $("outAlt").hidden=true; ["outDir","outDev","outTime","outNrp"].forEach(id=>$(id).textContent="—");
     $("outNotes").innerHTML=""; $("outWhy").innerHTML=""; $("outWarn").hidden=true; $("outStop").hidden=true;
-    paint("#3d3d3b","#F26B43","#F26B43"); $("rvFrom").textContent=""; $("rvTo").textContent=""; drawChart();
+    paint("#3d3d3b","#005098","#005098"); $("rvFrom").textContent=""; $("rvTo").textContent=""; drawChart();
     $("barShade").textContent="Choose levels and a tone"; $("barLine").textContent=$("outSub").textContent; $("share").hidden=true;
     if(tone.value==="blend"){ drawRing(true,r.k); blendReadout(true,r.k,r.blendList); }
     return;
