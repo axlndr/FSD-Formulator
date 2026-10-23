@@ -43,6 +43,46 @@ export const blendLabel=blend=>blend.preset ? PRESETS[blend.preset].name : "cust
 /* ---------- Formatting ---------- */
 export const g=(x)=>Number.isInteger(x)?`${x} g`:`${(+x).toFixed(1).replace(/\.0$/,"")} g`;
 export const ml=(x)=>`${Math.round(x)} ml`;
+/* ---------- Predicted result colour ----------
+   A simple pigment model for the swatch: start from the desired level's natural colour,
+   add the NRP that will be exposed at the desired level (more with more lift), let controlling bases and
+   complementary Pure Tones cancel it, then tint with the reflection components weighted by their grams
+   against the Natural Series. Lightness stays pinned near the shade's level: reflection changes tone, not level. */
+const NRP_HEX={"Red":"#8c2a1c","Red/orange":"#a8451f","Orange":"#c4661f","Yellow/orange":"#d08a2a","Yellow":"#dbb53c","Pale yellow":"#ecd68e"};
+const BASE_HEX={"Green Base":"#2f6b45","Blue Base":"#2b4a8c","Violet Base":"#5a3f8f"};
+const _hex2rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const _rgb2hex=c=>"#"+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("");
+const _lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
+function _hsl(c){const r=c[0]/255,g=c[1]/255,b=c[2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0;const l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?((g-b)/d+(g<b?6:0)):mx===g?((b-r)/d+2):((r-g)/d+4);h*=60;}return [h,s,l];}
+function _rgb(h,s,l){const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return [f(0)*255,f(8)*255,f(4)*255];}
+const _hueDist=(a,b)=>{const d=Math.abs(a-b)%360;return d>180?360-d:d;};
+function componentHex(name){
+  if(/^\d+N$/.test(name)) return null; // natural series handled separately
+  if(BASE_HEX[name]) return BASE_HEX[name];
+  if(name==="Red Base") return "#9b2418";
+  if(name==="Bright Base" || /N\/N$/.test(name)) return null; // lightening booster / coverage: no tint
+  const node=[...RINGS.light,...RINGS.dark,...PIGMENTS].find(x=>x.name===name); return node?node.hex:null;
+}
+export function predictHex({n,d,nrp,rows}){
+  n=+n; d=+d; rows=rows||[];
+  const nat=rows.filter(r=>/^\d+N$/.test(r[1])); const natG=nat.reduce((a,r)=>a+parseFloat(r[0]),0);
+  const base=_hex2rgb(levelHex(d)); // the result lands at the desired level; the shade chosen is how it gets there
+  const baseG=Math.max(10, natG + rows.filter(r=>/Base$/.test(r[1])).reduce((a,r)=>a+parseFloat(r[0]),0));
+  const lift=d-n; let wN = lift>=3 ? .4 : lift>0 ? .26 : .12;
+  const nrpHex=NRP_HEX[nrp]||"#c4661f"; const nrpHue=_hsl(_hex2rgb(nrpHex))[0];
+  const tints=[];
+  for(const [gs,name] of rows){ const g=parseFloat(gs); const hex=componentHex(name); if(!hex||!(g>0)) continue;
+    if(BASE_HEX[name]){ wN*=Math.max(0, 1-(g/baseG)*3.2); tints.push([hex,Math.min(.14,(g/baseG)*.5)]); continue; }
+    const hue=_hsl(_hex2rgb(hex))[0]; const opp=_hueDist(hue,(nrpHue+180)%360)<50;
+    const pig=name.startsWith("Pure "); const dark=name.startsWith("Dark ");
+    let w=Math.min(.5,(g/baseG)*(name==="Red Base"?1.3:pig?2.0:dark?1.8:1.4));
+    if(opp){ wN*=Math.max(0,1-w*2.2); w*=.45; }
+    tints.push([hex,w]); }
+  let c=_lerp(base,_hex2rgb(nrpHex),Math.max(0,Math.min(.45,wN)));
+  for(const [hex,w] of tints) c=_lerp(c,_hex2rgb(hex),w);
+  const [h,s,l]=_hsl(c); const lb=_hsl(base)[2]; const L=Math.max(lb-.12,Math.min(lb+.05,l));
+  return _rgb2hex(_rgb(h,Math.min(.6,s),L));
+}
 export function levelHex(l){const s=["#140c08","#2a1a10","#3f2616","#5a3a2a","#7a5236","#9a6e46","#b88a5a","#d2a978","#e6c998","#f3e3bd"];return s[Math.min(Math.max(l,1),10)-1];}
 const SCORE=x=>(x===""||x==null)?0:+x;
 
@@ -87,7 +127,7 @@ export function formulate(inp){
   if(strength==="auto"){ const lbl=v=>v>1?"strong":v<1?"soft":"standard"; const vars=[inp.texture,inp.htype,inp.density].some(x=>x!==""&&x!=null);
     if(vars||bumps.length) why.push(`Formula strength: hair variables average to ${lbl(kBase)}${bumps.length?`; ${bumps.join(", ")}`:""} → ${lbl(k)}${k!==1?` (${k>1?"50% more":"50% less"} Pure Tone)`:""}.`); }
   const [nrp,comp]=NRP[d];
-  const common={status:"ok", n, d, nrpText:`${nrp} · neutralize with ${comp.toLowerCase()}`, stripe:{from:levelHex(n), to:t.hex||levelHex(d)},
+  const common={status:"ok", n, d, nrpText:`${nrp} · neutralize with ${comp.toLowerCase()}`, stripe:{from:levelHex(n), to:t.hex||levelHex(d)}, nrpName:nrp,
     dir: d>n?`Lift ${d-n} level${d-n>1?"s":""}`:(d===n?"Same level (deposit)":`Deposit, ${n-d} level${n-d>1?"s":""} darker`),
     sub:`Natural ${n} → level ${d}, ${t.name.replace(/ \(.*\)/,"")}`, showCov: gy>0, isLight:true, k, blendList:null};
 
@@ -116,7 +156,8 @@ export function formulate(inp){
   const vol = dev.label;
   const time = lifting ? "30 min, room temperature" : "20 min, room temperature";
   const rows=[]; let catalystBase=0; let kicker="Suggested formula"; let shadeOut="";
-  const done=(o)=>({...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o});
+  const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o};
+    r.result=predictHex({n, d, nrp, rows:r.rows}); if(r.alt) r.alt.result=predictHex({n, d, nrp, rows:r.alt.rows}); return r; };
 
   /* --- Vibrant Red series (Red Base) --- */
   if(t.vibrant){

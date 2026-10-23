@@ -2,7 +2,7 @@
 // answer key, and the house rules agreed while building the app. Run with `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formulate, devChoice, blendFromAngle, kFromR, pigFromR } from "../src/formulate.js";
+import { formulate, predictHex, devChoice, blendFromAngle, kFromR, pigFromR } from "../src/formulate.js";
 import { GRID, PRESETS, TONES, RINGS, PIGMENTS, PT_GRAMS } from "../src/data.js";
 
 const base = { grey:"0", cov:"natural", strength:"auto", batch:"1", nrpMode:"auto", texture:"", htype:"", density:"", scalp:"on" };
@@ -190,4 +190,29 @@ test("every tone family has a swatch colour and a group", () => {
 });
 test("missing inputs produce an empty result naming what is missing", () => {
   assert.deepEqual(run({ nl:"", dl:"6", tone:"" }).missing, ["natural level", "tone"]);
+});
+
+test("predicted result colour: reflection tints toward the Pure Tone, lightness stays near the level", () => {
+  const plain=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["20 g","10N"]]});
+  const copper=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["10 g","10N"],["10 g","12N"],["3 g","Light O/Y"]]});
+  const ash=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["7.5 g","10N"],["7.5 g","12N"],["5 g","Blue Base"],["3 g","Light B/B"]]});
+  const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const [pr,pg,pb]=rgb(plain), [cr,cg,cb]=rgb(copper), [ar,ag,ab]=rgb(ash);
+  assert.ok(cr-cb > pr-pb, "copper is warmer (more red over blue) than the plain shade");
+  assert.ok(ab-ar > pb-pr, "blue ash is cooler than the plain shade");
+  const lum=([r,g,b])=>0.2126*r+0.7152*g+0.0722*b;
+  assert.ok(Math.abs(lum(rgb(copper))-lum(rgb(plain)))<40, "reflection does not change the level much");
+});
+test("predicted result colour: more lift exposes more NRP, a controlling base cancels it", () => {
+  const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const warmth=h=>{const [r,g,b]=rgb(h);return r-b;};
+  const lift3=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["20 g","10N"]]});
+  const lift0=predictHex({n:8,d:8,nrp:"Yellow/orange",rows:[["20 g","10N"]]});
+  const based=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["15 g","10N"],["5 g","Blue Base"]]});
+  assert.ok(warmth(lift3)>warmth(lift0));
+  assert.ok(warmth(based)<warmth(lift3));
+});
+test("formulate attaches a result colour to the formula and its alternative", () => {
+  const r=formulate({nl:"5",dl:"8",tone:"blueash",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}});
+  assert.match(r.result,/^#[0-9a-f]{6}$/); if(r.alt) assert.match(r.alt.result,/^#[0-9a-f]{6}$/);
 });

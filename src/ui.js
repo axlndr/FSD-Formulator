@@ -166,7 +166,7 @@ function compute(){
     if(tone.value==="blend"){ drawRing(true,r.k); blendReadout(true,r.k,r.blendList); }
     return;
   }
-  $("outNrp").textContent=r.nrpText; paint(r.stripe.from,r.stripe.to,r.stripe.to);
+  $("outNrp").textContent=r.nrpText; paint(r.stripe.from,r.result||r.stripe.to,r.stripe.to);
   $("rvFrom").textContent=`NL ${nl.value}`; $("rvTo").textContent=`DL ${dl.value}`;
   $("outDir").textContent=r.dir; $("outSub").textContent=r.sub;
   if(tone.value==="blend" && r.blendList){ drawRing(r.isLight,r.k); blendReadout(r.isLight,r.k,r.blendList); }
