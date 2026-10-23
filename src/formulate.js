@@ -229,7 +229,8 @@ export function formulate(inp){
     if(isLight && shades.some(s=>s>=12)) warn = warn || "N/N is not charted for 12N and 14N. Expect sheer blending rather than coverage at these shades.";
     catalystBase = cov==="max" ? baseG*shades.length : baseG*shades.length + rows.slice(shades.length).reduce((a,r)=>a+parseFloat(r[0]),0);
     why.push(cov==="max" ? "Maximum coverage: Color Catalyst 1:2 on the Natural Series only; do not adjust for Pure Tone." : "Natural coverage: Color Catalyst 1:2 on the total colour components.");
-    if(gy>=75) notes.push("With more than 50% grey, expect to lean on maximum coverage and the shade's full N/N amount; strand test.");
+    if(gy>=90) notes.push("With 90% or more grey, use maximum coverage with the shade's full N/N amount and consider a darker shade for depth; strand test.");
+    else if(gy>=75) notes.push("With about 75% grey, lean on maximum coverage and the shade's full N/N amount; strand test.");
     notes.push("Bright Base is not recommended for grey coverage.");
     return done({dev:`${ml(catalystBase*2)} · ${vol}`, time:"Up to 30 min, room temperature"});
   }

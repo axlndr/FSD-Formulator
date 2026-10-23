@@ -20,6 +20,16 @@ for(const [sel,strip] of [[nl,"nlStrip"],[dl,"dlStrip"]]){
   $(strip).innerHTML=[1,2,3,4,5,6,7,8,9,10].map(l=>`<button type="button" class="lv" role="radio" aria-checked="false" data-l="${l}" style="--c:${levelHex(l)}" aria-label="Level ${l}"><span>${l}</span></button>`).join("");
   $(strip).addEventListener("click",e=>{ const b=e.target.closest(".lv"); if(!b) return; sel.value = sel.value===b.dataset.l ? "" : b.dataset.l; sel.dispatchEvent(new Event("change",{bubbles:true})); });
 }
+/* Grey strip: swatches of the natural level shot through with white strands at each percentage */
+const GREYS=[[0,"None"],[25,"25% or less"],[50,"About 50%"],[75,"About 75%"],[90,"90% or more"]];
+function greySVG(pct,baseHex){ let seed=pct*7+3; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
+  let x=0, strands=""; while(x<60){ const w=0.35+rnd()*1.1; const white=rnd()*100<pct; if(white) strands+=`<rect x="${x.toFixed(2)}" y="0" width="${w.toFixed(2)}" height="60" fill="#f1ede6" opacity="${(0.75+rnd()*0.25).toFixed(2)}"/>`; x+=w+0.25+rnd()*0.6; }
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><rect width="60" height="60" fill="${baseHex}"/>${strands}</svg>`;
+  return `url('data:image/svg+xml,${encodeURIComponent(svg)}')`; }
+function drawGreyStrip(){ const base=levelHex(+nl.value||4);
+  $("greyStrip").innerHTML=GREYS.map(([p,label])=>`<button type="button" class="lv gv" role="radio" aria-checked="${String(grey.value)===String(p)}" data-l="${p}" aria-label="Grey: ${label}" style="--c:${base};background-image:${greySVG(p,base)}"><span>${p===0?"0":p===25?"≤25":p===90?"≥90":p}<i>%</i></span></button>`).join(""); }
+$("greyStrip").addEventListener("click",e=>{ const b=e.target.closest(".lv"); if(!b) return; grey.value = grey.value===b.dataset.l ? "0" : b.dataset.l; grey.dispatchEvent(new Event("change",{bubbles:true})); });
+function syncGrey(){ drawGreyStrip(); const g=GREYS.find(x=>String(x[0])===String(grey.value)); $("greyVal").textContent=g?g[1]:"None"; $("greyVal").classList.toggle("empty",grey.value==="0"); }
 function syncLevels(){
   for(const [sel,strip,val] of [[nl,"nlStrip","nlVal"],[dl,"dlStrip","dlVal"]]){
     $(strip).querySelectorAll(".lv").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.l===sel.value)));
@@ -230,11 +240,11 @@ try{ if(localStorage.getItem("fsd-howto-seen")){ $("howto").open=false; } else {
 /* Advanced row summary */
 function advLabel(){ const sel=id=>$(id).options[$(id).selectedIndex].text.split(" (")[0]; $("advSel").textContent=`NRP ${sel("nrpMode")} · ${sel("strength")} · ${sel("batch").replace(" base","")}`; }
 function hairLabel(){ const t=$("texture"),ty=$("htype"),de=$("density"),sc=$("scalp"); const parts=[t.value!==""&&t.options[t.selectedIndex].text.split(" · ")[0], ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
-[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncVals(); hairLabel(); advLabel(); compute(); }));
+[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncGrey(); syncVals(); hairLabel(); advLabel(); compute(); }));
 $("noneToggle").addEventListener("click",()=>{ if(tone.value!=="bare"){ tone.value="bare"; syncPicker(); compute(); } });
 $("toneMode").addEventListener("click",()=>{ if(tone.value==="bare"){ tone.value=""; syncPicker(); compute(); } });
-$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; syncLevels(); syncVals(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; openFam=null; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
-syncLevels(); syncVals(); advLabel(); compute();
+$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; syncLevels(); syncGrey(); syncVals(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; openFam=null; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
+syncLevels(); syncGrey(); syncVals(); advLabel(); compute();
 
 /* ---------- Offline / installable (GitHub Pages only; the artifact wrapper has no service worker scope) ---------- */
 if("serviceWorker" in navigator && location.protocol==="https:" && !location.hostname.endsWith("claude.ai")){
