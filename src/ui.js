@@ -68,7 +68,7 @@ function syncPicker(){
   else strip.hidden=true;
   // preview
   const ball=$("tpBall"), name=$("tpName"), fam=$("tpFam");
-  if(t && t.blend){ const pr=blend.preset&&PRESETS[blend.preset]; ball.style.setProperty("--c", pr?vivid(pr.hex):"#b89a84"); ball.classList.toggle("multi",!pr); name.textContent=pr?pr.name:"Custom blend"; fam.textContent=pr?"Custom":"Set on the colour wheel below"; }
+  if(t && t.blend){ const pr=blend.preset&&PRESETS[blend.preset]; ball.style.setProperty("--c", pr?vivid(pr.hex):"#b89a84"); ball.classList.toggle("multi",!pr); name.textContent=pr?pr.name:"Custom tone"; fam.textContent=pr?"Custom":"Set on the colour wheel below"; }
   else if(t){ ball.style.setProperty("--c",vivid(t.hex)); ball.classList.remove("multi"); name.textContent=(SHORT[tone.value]||t.name).replace(/:.*$/,""); fam.textContent=FAMS.find(f=>f.g===t.group)?.label||t.group; }
   else { ball.style.setProperty("--c","#c9c3bd"); ball.classList.remove("multi"); name.textContent="Choose a tone"; fam.textContent="Pick a family, then a colour"; }
   $("blendPanel").hidden = tone.value!=="blend";

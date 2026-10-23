@@ -38,7 +38,7 @@ export function recipeAngle(key,isLight){ const r=PRESETS[key]; const ring=[...r
   return Math.round(Math.atan2(vy,vx)*180/Math.PI); }
 export function blendTemp(blend,isLight){ if(blend.preset) return PRESETS[blend.preset].nrp==="enhance"?"warm":"cool";
   const near=nearestNode(blend.ang,isLight); return WARM_KEYS.includes(near.key)?"warm":"cool"; }
-export const blendLabel=blend=>blend.preset ? PRESETS[blend.preset].name : "custom blend";
+export const blendLabel=blend=>blend.preset ? PRESETS[blend.preset].name : "custom tone";
 
 /* ---------- Formatting ---------- */
 export const g=(x)=>Number.isInteger(x)?`${x} g`:`${(+x).toFixed(1).replace(/\.0$/,"")} g`;
