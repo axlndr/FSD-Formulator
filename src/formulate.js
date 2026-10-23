@@ -157,7 +157,7 @@ export function formulate(inp){
   const time = lifting ? "30 min, room temperature" : "20 min, room temperature";
   const rows=[]; let catalystBase=0; let kicker="Suggested formula"; let shadeOut="";
   const por=inp.porosity||"";
-  if(por==="medhigh"||por==="high") notes.unshift("Pre-treat: Botanical Repair™ Equalizing Primer, up to 30 sprays (30 ml), before colouring.");
+  if(por==="high") notes.unshift("Pre-treat: Botanical Repair™ Equalizing Primer, up to 30 sprays (30 ml), before colouring.");
   if(por==="high"||por==="compromised") notes.unshift("Pre-treat: Botanical Repair™ Bond-Building and Strengthening Treatment before colouring.");
   if(por==="compromised") notes.push("Highly compromised hair takes colour fast and unevenly; strand test and watch processing closely.");
   const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o};

@@ -70,7 +70,7 @@ function drawVariables(){
   const den=[["-1","Thin",4],["0","Medium",8],["1","Thick",14]];
   $("denStrip").innerHTML=den.map(([v,l,n])=>{ let p=""; for(let i=0;i<n;i++){ const x=6+(28*(i+0.5)/n); p+=`<path d="M${x},4 C${x+1.5},24 ${x-1.5},44 ${x},60" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`; } return vtile("",v,l,p,$("density").value===v); }).join("");
   // porosity: the cuticle from flat and closed to lifted and broken
-  const por=[["low","Low",0.6,0],["medium","Medium",1.4,0],["medhigh","Med–high",2.4,0],["high","High",3.4,1],["compromised","Compromised",4.4,2]];
+  const por=[["low","Low",0.6,0],["medium","Medium",1.8,0],["high","High",3.4,1],["compromised","Compromised",4.4,2]];
   $("porStrip").innerHTML=por.map(([v,l,lift,broken])=>{ let out=`<rect x="12" y="2" width="16" height="60" rx="8" fill="currentColor" fill-opacity=".18"/>`;
     for(let y=8,i=0;y<60;y+=6.5,i++){ const gap=broken&&i%3===1 ? 1 : 0; out+=`<path d="M12,${y} q4,${lift} 8,0 t8,0" fill="none" stroke="currentColor" stroke-opacity="${gap?.25:.6}" stroke-width="${.8+lift*.18}" stroke-linecap="round"/>`; if(broken===2&&i%2) out+=`<path d="M${22+(i%3)*2},${y-1} l3,${-2.5}" stroke="currentColor" stroke-opacity=".6" stroke-width="1" stroke-linecap="round"/>`; }
     return vtile("",v,l,out,$("porosity").value===v); }).join("");

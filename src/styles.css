@@ -69,6 +69,8 @@ fieldset{border:0;padding:0;margin:0;display:grid;gap:22px;min-width:0}
 .vstrip{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none;min-width:0}
 .vstrip::-webkit-scrollbar{display:none}
 .vstrip.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}
+.vstrip.four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}
+.vstrip.four .vt{flex:auto}
 .vt{flex:0 0 52px;display:grid;justify-items:center;gap:4px;padding:6px 4px 5px;border-radius:var(--r-sm);background:var(--row);color:var(--fg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6);transition:background .2s var(--ease),box-shadow .2s var(--ease)}
 .vstrip.three .vt{flex:auto}
 .vt svg{width:30px;height:48px;display:block}
