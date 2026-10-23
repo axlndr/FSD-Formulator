@@ -95,19 +95,29 @@
     </div>
 
     <details class="group section" id="hairSection">
-      <summary class="item"><span class="lbl">Guest's hair variables</span><span class="val" id="hairSel">Optional</span></summary>
-      <label class="item sel"><span class="lbl">Pattern</span><span class="val"></span>
-        <select id="texture"><option value="">Select…</option><option value="0">1A–2A · Straight to soft wave</option><option value="0.5">2B–3B · Moderate wave to moderate curl</option><option value="1">3C–4C · Strong curl to strong coil</option></select>
-      </label>
-      <label class="item sel"><span class="lbl">Texture</span><span class="val"></span>
-        <select id="htype"><option value="">Select…</option><option value="-1">Fine</option><option value="0">Medium</option><option value="1">Coarse</option></select>
-      </label>
-      <label class="item sel"><span class="lbl">Density</span><span class="val"></span>
-        <select id="density"><option value="">Select…</option><option value="-1">Thin</option><option value="0">Medium</option><option value="1">Thick</option></select>
-      </label>
-      <label class="item sel"><span class="lbl">Application</span><span class="val"></span>
-        <select id="scalp"><option value="on">On the scalp (20 Volume maximum)</option><option value="off">Off the scalp (30/40 Volume allowed)</option></select>
-      </label>
+      <summary class="item"><span class="lbl">Variables</span><span class="val" id="hairSel">Optional</span></summary>
+      <div class="item stack">
+        <div class="itemhead"><span class="lbl">Pattern</span><span class="val empty" id="patVal">Select</span></div>
+        <div class="vstrip" id="patStrip" role="radiogroup" aria-label="Curl pattern"></div>
+        <select id="texture" class="sr" aria-hidden="true" tabindex="-1"><option value="">Select…</option><option value="0">1A–2A · Straight to soft wave</option><option value="0.5">2B–3B · Moderate wave to moderate curl</option><option value="1">3C–4C · Strong curl to strong coil</option></select>
+        <p class="hint">1A–2A no change · 2B–3B half a level · 3C–4C one level</p>
+      </div>
+      <div class="item stack">
+        <div class="itemhead"><span class="lbl">Texture</span><span class="val empty" id="texVal">Select</span></div>
+        <div class="vstrip three" id="texStrip" role="radiogroup" aria-label="Strand texture"></div>
+        <select id="htype" class="sr" aria-hidden="true" tabindex="-1"><option value="">Select…</option><option value="-1">Fine</option><option value="0">Medium</option><option value="1">Coarse</option></select>
+      </div>
+      <div class="item stack">
+        <div class="itemhead"><span class="lbl">Density</span><span class="val empty" id="denVal">Select</span></div>
+        <div class="vstrip three" id="denStrip" role="radiogroup" aria-label="Density"></div>
+        <select id="density" class="sr" aria-hidden="true" tabindex="-1"><option value="">Select…</option><option value="-1">Thin</option><option value="0">Medium</option><option value="1">Thick</option></select>
+      </div>
+      <div class="item">
+        <span class="lbl">Application</span>
+        <div class="seg" role="group" aria-label="Application"><button type="button" id="scalpOn" aria-pressed="true">On scalp</button><button type="button" id="scalpOff" aria-pressed="false">Off scalp</button></div>
+        <select id="scalp" class="sr" aria-hidden="true" tabindex="-1"><option value="on">On the scalp (20 Volume maximum)</option><option value="off">Off the scalp (30/40 Volume allowed)</option></select>
+      </div>
+      <p class="foot">Off the scalp allows 30 or 40 Volume when the variables call for it; on the scalp is capped at 20 Volume.</p>
     </details>
 
     <details class="group section" id="advSection">

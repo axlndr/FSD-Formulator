@@ -46,6 +46,32 @@ function drawGreyStrip(){ const base=levelHex(+nl.value||5);
   $("greyStrip").innerHTML=GREYS.map(([p,label])=>`<button type="button" class="lv gv" role="radio" aria-checked="${String(grey.value)===String(p)}" data-l="${p}" aria-label="Grey: ${label}" style="background-image:url(${greySwatch(p,base)})"><span>${p===0?"0":p===25?"≤25":p===90?"≥90":p}<i>%</i></span></button>`).join(""); }
 $("greyStrip").addEventListener("click",e=>{ const b=e.target.closest(".lv"); if(!b) return; grey.value = grey.value===b.dataset.l ? "0" : b.dataset.l; grey.dispatchEvent(new Event("change",{bubbles:true})); });
 function syncGrey(){ drawGreyStrip(); const g=GREYS.find(x=>String(x[0])===String(grey.value)); $("greyVal").textContent=g?g[1]:"None"; $("greyVal").classList.toggle("empty",grey.value==="0"); }
+/* Variables: drawn tiles for pattern (1A–4C), texture and density; application as a segmented control */
+const PATTERNS=[["1A","0","Straight"],["1B","0","Straight"],["1C","0","Straight, coarse"],["2A","0","Soft wave"],["2B","0.5","Wave"],["2C","0.5","Strong wave"],["3A","0.5","Loose curl"],["3B","0.5","Curl"],["3C","1","Tight curl"],["4A","1","Coil"],["4B","1","Z-coil"],["4C","1","Tight coil"]];
+let patternCode="";
+function patternPath(code){ // one strand, 40 wide × 64 tall, drawn from the top
+  const n=code[0], sub=code[1];
+  if(n==="1"){ const b=sub==="A"?0:sub==="B"?1.5:3; return `M20,4 C${20+b},24 ${20-b},44 20,60`; }
+  if(n==="2"){ const amp=sub==="A"?3:sub==="B"?6:9; let d="M20,4 ", x=20,y=4; for(let i=0;i<4;i++){ const dir=i%2?-1:1; d+=`Q${x+dir*amp*2},${y+7} ${x},${y+14} `; y+=14; } return d; }
+  if(n==="3"||(n==="4"&&sub==="A")){ // continuous curl: a prolate cycloid, tighter as the number rises
+    const [r,step]=n==="3"?(sub==="A"?[7,14]:sub==="B"?[6,11]:[5,9]):[4.2,6.5]; const turns=56/step; let d=""; 
+    for(let t=0;t<=turns*Math.PI*2;t+=0.25){ const x=20+r*Math.sin(t), y=6+(step/(Math.PI*2))*t-(r*0.55)*Math.cos(t)+r*0.55; d+=(d?"L":"M")+x.toFixed(1)+","+y.toFixed(1)+" "; } return d; }
+  const amp=sub==="B"?4.5:4, step=sub==="B"?5:4; let d=`M${20-amp},4 `; for(let i=0;i<Math.floor(56/step);i++){ d+=`l${2*amp},${step/2} l${-2*amp},${step/2} `; } return d; }
+function vtile(id,val,label,svg,checked){ return `<button type="button" class="vt" role="radio" aria-checked="${checked}" data-v="${val}" ${id?`data-code="${id}"`:""} aria-label="${label}"><svg viewBox="0 0 40 64" aria-hidden="true">${svg}</svg><span>${id||label}</span></button>`; }
+function drawVariables(){
+  $("patStrip").innerHTML=PATTERNS.map(([c,v,l])=>vtile(c,v,`${c} · ${l}`,`<path d="${patternPath(c)}" fill="none" stroke="currentColor" stroke-width="${c[0]==="4"?1.7:c[1]==="A"?1.6:c[1]==="B"?2.1:2.6}" stroke-linecap="round" stroke-linejoin="round"/>`,patternCode===c)).join("");
+  const tex=[["-1","Fine",1.2],["0","Medium",2.4],["1","Coarse",4]];
+  $("texStrip").innerHTML=tex.map(([v,l,w])=>vtile("",v,l,`<path d="M20,4 C22,24 18,44 20,60" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round"/>`,$("htype").value===v)).join("");
+  const den=[["-1","Thin",4],["0","Medium",8],["1","Thick",14]];
+  $("denStrip").innerHTML=den.map(([v,l,n])=>{ let p=""; for(let i=0;i<n;i++){ const x=6+(28*(i+0.5)/n); p+=`<path d="M${x},4 C${x+1.5},24 ${x-1.5},44 ${x},60" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`; } return vtile("",v,l,p,$("density").value===v); }).join("");
+  const pv=$("patVal"); const pat=PATTERNS.find(x=>x[0]===patternCode); pv.textContent=pat?`${pat[0]} · ${pat[2]}`:"Select"; pv.classList.toggle("empty",!pat);
+  for(const [sel,val] of [["htype","texVal"],["density","denVal"]]){ const se=$(sel); const o=se.options[se.selectedIndex]; $(val).textContent=se.value?o.text:"Select"; $(val).classList.toggle("empty",!se.value); }
+  $("scalpOn").setAttribute("aria-pressed",String($("scalp").value==="on")); $("scalpOff").setAttribute("aria-pressed",String($("scalp").value==="off"));
+}
+$("patStrip").addEventListener("click",e=>{ const b=e.target.closest(".vt"); if(!b) return; const se=$("texture"); if(patternCode===b.dataset.code){ patternCode=""; se.value=""; } else { patternCode=b.dataset.code; se.value=b.dataset.v; } se.dispatchEvent(new Event("change",{bubbles:true})); });
+for(const [strip,sel] of [["texStrip","htype"],["denStrip","density"]]) $(strip).addEventListener("click",e=>{ const b=e.target.closest(".vt"); if(!b) return; const se=$(sel); se.value = se.value===b.dataset.v ? "" : b.dataset.v; se.dispatchEvent(new Event("change",{bubbles:true})); });
+$("scalpOn").addEventListener("click",()=>{ $("scalp").value="on"; $("scalp").dispatchEvent(new Event("change",{bubbles:true})); });
+$("scalpOff").addEventListener("click",()=>{ $("scalp").value="off"; $("scalp").dispatchEvent(new Event("change",{bubbles:true})); });
 function syncLevels(){
   for(const [sel,strip,val] of [[nl,"nlStrip","nlVal"],[dl,"dlStrip","dlVal"]]){
     $(strip).querySelectorAll(".lv").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.l===sel.value)));
@@ -255,12 +281,12 @@ try{ if(localStorage.getItem("fsd-howto-seen")){ $("howto").open=false; } else {
 
 /* Advanced row summary */
 function advLabel(){ const sel=id=>$(id).options[$(id).selectedIndex].text.split(" (")[0]; $("advSel").textContent=`NRP ${sel("nrpMode")} · ${sel("strength")} · ${sel("batch").replace(" base","")}`; }
-function hairLabel(){ const t=$("texture"),ty=$("htype"),de=$("density"),sc=$("scalp"); const parts=[t.value!==""&&t.options[t.selectedIndex].text.split(" · ")[0], ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
-[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncGrey(); syncVals(); hairLabel(); advLabel(); compute(); }));
+function hairLabel(){ const ty=$("htype"),de=$("density"),sc=$("scalp"); const parts=[patternCode, ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
+[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncGrey(); syncVals(); drawVariables(); hairLabel(); advLabel(); compute(); }));
 $("noneToggle").addEventListener("click",()=>{ if(tone.value!=="bare"){ tone.value="bare"; syncPicker(); compute(); } });
 $("toneMode").addEventListener("click",()=>{ if(tone.value==="bare"){ tone.value=""; syncPicker(); compute(); } });
-$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; syncLevels(); syncGrey(); syncVals(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; openFam=null; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
-syncLevels(); syncGrey(); syncVals(); advLabel(); compute();
+$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; patternCode=""; syncLevels(); syncGrey(); syncVals(); drawVariables(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; openFam=null; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
+syncLevels(); syncGrey(); syncVals(); drawVariables(); advLabel(); compute();
 
 /* ---------- Offline / installable (GitHub Pages only; the artifact wrapper has no service worker scope) ---------- */
 if("serviceWorker" in navigator && location.protocol==="https:" && !location.hostname.endsWith("claude.ai")){
