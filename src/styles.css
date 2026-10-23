@@ -4,10 +4,10 @@
    floating formula bar on phones that opens as a sheet, a pinned formula column on laptops. One accent: cobalt. */
 :root{
   --g1:#041735; --g2:#1f5498; --g3:#2f7082; --g4:#3d8a5c;
-  --mat:rgba(255,255,255,.62); --mat-solid:#ffffff; --sheet:#eef1f6; --row:rgba(255,255,255,.5); --row-hi:rgba(255,255,255,.72); --hair:rgba(29,29,31,.12);
-  --fg:#1d1d1f; --fg2:rgba(29,29,31,.76); --fg3:rgba(29,29,31,.6); --onwall:#ffffff;
-  --glass:blur(36px) saturate(190%); --rim:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.45),0 1px 2px rgba(4,23,53,.08),0 12px 32px rgba(4,23,53,.18);
-  --sheen:linear-gradient(135deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.12) 38%,rgba(255,255,255,.05) 62%,rgba(255,255,255,.3) 100%);
+  --mat:rgba(255,255,255,.42); --mat-solid:#ffffff; --sheet:#eef1f6; --row:rgba(255,255,255,.4); --row-hi:rgba(255,255,255,.62); --hair:rgba(29,29,31,.12);
+  --fg:#1d1d1f; --fg2:rgba(29,29,31,.8); --fg3:rgba(29,29,31,.66); --onwall:#ffffff;
+  --glass:blur(40px) saturate(180%); --rim:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.45),0 1px 2px rgba(4,23,53,.08),0 12px 32px rgba(4,23,53,.18);
+  --sheen:linear-gradient(135deg,rgba(255,255,255,.42) 0%,rgba(255,255,255,.08) 38%,rgba(255,255,255,.03) 62%,rgba(255,255,255,.22) 100%);
   --blue:#005098; --blue-hi:#0f62b4; --ink:#0b5fb3; --warn:#7a4f00; --warn-bg:rgba(243,205,122,.3); --stop:#9b2a1a; --stop-bg:rgba(255,156,134,.3);
   --r-lg:24px; --r-md:15px; --r-sm:11px;
   --font:"Aveda Sans",-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif; --mono:"Aveda Mono",ui-monospace,"SF Mono",Menlo,monospace;
