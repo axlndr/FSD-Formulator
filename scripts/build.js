@@ -12,7 +12,7 @@ const flatten = (file) => readFileSync(join(src, file), "utf8")
   .replace(/^import[\s\S]*?from\s+"[^"]+";\s*$/gm, "")
   .replace(/^export\s+(const|let|function|class)\s/gm, "$1 ")
   .replace(/^export\s+\{[^}]*\};?\s*$/gm, "");
-const script = ["data.js", "formulate.js", "ui.js"].map(f => `/* ===== ${f} ===== */\n${flatten(f)}`).join("\n");
+const script = ["data.js", "greyimg.js", "formulate.js", "ui.js"].map(f => `/* ===== ${f} ===== */\n${flatten(f)}`).join("\n");
 const styles = ["fonts.css", "styles.css"].map(f => readFileSync(join(src, f), "utf8")).join("\n");
 
 let html = readFileSync(join(src, "index.html"), "utf8");

@@ -1,5 +1,6 @@
 // Page wiring: reads the form, calls formulate(), renders the result and draws the colour wheel.
 import { GRID, DERIVED, TONES, SHORT, ORDER, RINGS, ringFor, PRESETS, PIGMENTS } from "./data.js";
+import { GREY_IMG } from "./greyimg.js";
 import { formulate, norm, nearestNode, nearestPigment, kFromR, pigFromR, rFromK, kLabel, blendList, recipeAngle, levelHex } from "./formulate.js";
 
 const $ = id => document.getElementById(id);
@@ -22,12 +23,9 @@ for(const [sel,strip] of [[nl,"nlStrip"],[dl,"dlStrip"]]){
 }
 /* Grey strip: swatches of the natural level shot through with white strands at each percentage */
 const GREYS=[[0,"None"],[25,"25% or less"],[50,"About 50%"],[75,"About 75%"],[90,"90% or more"]];
-function greySVG(pct,baseHex){ let seed=pct*7+3; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
-  let x=0, strands=""; while(x<60){ const w=0.35+rnd()*1.1; const white=rnd()*100<pct; if(white) strands+=`<rect x="${x.toFixed(2)}" y="0" width="${w.toFixed(2)}" height="60" fill="#f1ede6" opacity="${(0.75+rnd()*0.25).toFixed(2)}"/>`; x+=w+0.25+rnd()*0.6; }
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><rect width="60" height="60" fill="${baseHex}"/>${strands}</svg>`;
-  return `url('data:image/svg+xml,${encodeURIComponent(svg)}')`; }
-function drawGreyStrip(){ const base=levelHex(+nl.value||4);
-  $("greyStrip").innerHTML=GREYS.map(([p,label])=>`<button type="button" class="lv gv" role="radio" aria-checked="${String(grey.value)===String(p)}" data-l="${p}" aria-label="Grey: ${label}" style="--c:${base};background-image:${greySVG(p,base)}"><span>${p===0?"0":p===25?"≤25":p===90?"≥90":p}<i>%</i></span></button>`).join(""); }
+const GREY_COL={0:0,25:20,50:50,75:70,90:90}; // chart column used for each step
+function drawGreyStrip(){ const lvl=+nl.value||5; const row=lvl<=3?"a":lvl<=6?"b":"c";
+  $("greyStrip").innerHTML=GREYS.map(([p,label])=>`<button type="button" class="lv gv" role="radio" aria-checked="${String(grey.value)===String(p)}" data-l="${p}" aria-label="Grey: ${label}" style="background-image:url(${GREY_IMG[row][GREY_COL[p]]})"><span>${p===0?"0":p===25?"≤25":p===90?"≥90":p}<i>%</i></span></button>`).join(""); }
 $("greyStrip").addEventListener("click",e=>{ const b=e.target.closest(".lv"); if(!b) return; grey.value = grey.value===b.dataset.l ? "0" : b.dataset.l; grey.dispatchEvent(new Event("change",{bubbles:true})); });
 function syncGrey(){ drawGreyStrip(); const g=GREYS.find(x=>String(x[0])===String(grey.value)); $("greyVal").textContent=g?g[1]:"None"; $("greyVal").classList.toggle("empty",grey.value==="0"); }
 function syncLevels(){
