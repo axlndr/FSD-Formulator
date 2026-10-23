@@ -147,7 +147,7 @@ function blendReadout(isLight,k,list){
   lastIsLight=isLight;
   const pf=blend.k!=null?blend.pigF:0; const pgName=(pf>0)?nearestPigment(blend.ang).name:null;
   const lbl=(pf>=2?"purest":kLabel(k,false))+(blend.k!=null?` · Pure Tone ${pf>=2?"replaced by":Math.round(k*100)+"% of standard"+(pf>0?" +":"")}${pf>0?` ${pgName} ${pf>=2?"at 200%":Math.round(pf*100)+"%"}`:""}`:"");
-  $("blendReadout").innerHTML = (blend.preset?`<b>${PRESETS[blend.preset].name}</b> · outlined on the wheel<br>`:"")+list.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(" · ")+`<br>${lbl}${blend.k==null?(blend.preset&&PRESETS[blend.preset].k?" (part of the recipe)":" (from hair variables)"):""}`;
+  $("blendReadout").innerHTML = (blend.preset?`<b>${PRESETS[blend.preset].name}</b><br>`:"")+list.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(" · ")+`<br>${lbl}${blend.k==null?(blend.preset&&PRESETS[blend.preset].k?" (part of the recipe)":" (from hair variables)"):""}`;
 }
 
 /* ---------- Compute + render ---------- */
