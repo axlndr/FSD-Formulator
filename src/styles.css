@@ -166,6 +166,10 @@ table.mix tr.total td{box-shadow:none;color:var(--fg2);font-size:15px;font-weigh
 .altbox[open] summary::after{transform:rotate(-135deg)}
 .altbox .sub,.altbox table{margin:0 12px}
 .altbox[open]{padding-bottom:12px}
+.treat summary .tag{margin-left:auto;margin-right:10px;font-size:12px;padding:2px 9px;border-radius:999px;corner-shape:round;background:rgba(29,29,31,.08);color:var(--fg2)}
+.treat.req summary .tag{background:rgba(15,98,180,.14);color:var(--ink);font-weight:700}
+.treat .notes{margin:8px 12px 0 32px}
+.treat .sub{margin-top:6px}
 .notes{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;color:var(--fg2)}
 .notes:empty{display:none}
 .flag{padding:10px 12px;font-size:15px;border-radius:var(--r-md)}

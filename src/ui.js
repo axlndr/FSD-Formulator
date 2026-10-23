@@ -223,7 +223,7 @@ function compute(){
   if(r.status==="empty"){
     $("outKicker").textContent="Waiting for input"; $("outShade").textContent="—"; $("outSub").textContent=`Choose the ${r.missing.join(", ").replace(/, ([^,]*)$/," and $1")} to see a formula.`;
     $("outMix").innerHTML=""; $("outAlt").hidden=true; ["outDir","outDev","outTime","outNrp"].forEach(id=>$(id).textContent="—");
-    $("outNotes").innerHTML=""; $("outWhy").innerHTML=""; $("outWarn").hidden=true; $("outStop").hidden=true;
+    $("outNotes").innerHTML=""; $("outWhy").innerHTML=""; $("outTreat").hidden=true; $("outWarn").hidden=true; $("outStop").hidden=true;
     paint("#3d3d3b","#005098","#005098"); $("rvFrom").textContent=""; $("rvTo").textContent=""; drawChart();
     $("barShade").textContent="Choose levels and a tone"; $("barLine").textContent=$("outSub").textContent; $("share").hidden=true;
     if(tone.value==="blend"){ drawRing(true,r.k); blendReadout(true,r.k,r.blendList); }
@@ -251,6 +251,8 @@ function render(o){
   $("barShade").textContent=o.shade; $("barLine").textContent=`${o.rows.map(r=>`${r[0]} ${r[1]}`).join(" + ")} · ${o.dev}`;
   $("share").hidden=!navigator.share;
   $("outNotes").innerHTML=o.notes.map(x=>`<li>${x}</li>`).join("");
+  if(o.treat){ $("outTreat").hidden=false; $("outTreatLevel").textContent=o.treat.level; $("outTreat").classList.toggle("req",o.treat.level==="required"); $("outTreat").open = o.treat.level==="required";
+    $("outTreatLead").textContent=o.treat.lead; $("outTreatSteps").innerHTML=o.treat.steps.map(x=>`<li>${x}</li>`).join(""); } else $("outTreat").hidden=true;
   $("outWhy").innerHTML=o.why.map(x=>`<li>${x}</li>`).join("");
   $("outWarn").hidden=!o.warn; $("outWarn").textContent=o.warn||"";
   $("outStop").hidden=!o.stop; $("outStop").textContent=o.stop||"";
@@ -268,7 +270,8 @@ function drawChart(){
 /* ---------- Events ---------- */
 function formulaText(){
   const lines=[...$("outMix").querySelectorAll("tr")].map(tr=>[...tr.children].map(td=>td.textContent).join("  ")).join("\n");
-  return `${$("outShade").textContent}\n${$("outSub").textContent}\n${lines}\n${$("outTime").textContent}`;
+  const treat=$("outTreat").hidden?"":"\n\nBotanical Repair treatment ("+$("outTreatLevel").textContent+")\n"+[...$("outTreatSteps").children].map((li,i)=>`${i+1}. ${li.textContent}`).join("\n");
+  return `${$("outShade").textContent}\n${$("outSub").textContent}\n${lines}\n${$("outTime").textContent}${treat}`;
 }
 $("copy").addEventListener("click",()=>{
   navigator.clipboard.writeText(formulaText()).then(()=>{$("status").textContent="Copied.";}).catch(()=>{$("status").textContent="Select the formula to copy it.";});

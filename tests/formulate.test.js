@@ -217,10 +217,17 @@ test("formulate attaches a result colour to the formula and its alternative", ()
   assert.match(r.result,/^#[0-9a-f]{6}$/); if(r.alt) assert.match(r.alt.result,/^#[0-9a-f]{6}$/);
 });
 
-test("porosity pre-treatment notes", () => {
+test("Botanical Repair colour treatment plan follows the Reference Guide", () => {
   const base={nl:"5",dl:"8",tone:"copper",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
-  const n=p=>formulate({...base,porosity:p}).notes.join(" | ");
-  assert.ok(!/Pre-treat/.test(n("medium")));
-  assert.ok(/Equalizing Primer, up to 30 sprays \(30 ml\)/.test(n("high")) && /Bond-Building and Strengthening/.test(n("high")));
-  assert.ok(/Bond-Building and Strengthening/.test(n("compromised")) && !/Equalizing Primer/.test(n("compromised")));
+  const r=formulate({...base,porosity:"high",htype:"-1"});
+  assert.equal(r.treat.level,"required");
+  assert.match(r.treat.steps[0],/5 ml Botanical Repair™ Professional Equalizing Primer/);
+  assert.match(r.treat.steps[1],/4\.5 g Botanical Repair™ Professional Hair Strengthening Additive into the 23 g of colour \(8 g per 40 g\)/);
+  assert.match(r.treat.steps[4],/Bond Activator Light, process 10 minutes/);
+  const m=formulate({...base,porosity:"medium",htype:"1"});
+  assert.equal(m.treat.level,"recommended"); assert.match(m.treat.steps[4],/Bond Activator Rich/);
+  const c=formulate({...base,porosity:"compromised"});
+  assert.match(c.treat.lead,/Restorative Treatment/); assert.ok(c.notes.some(n=>/takes colour fast and unevenly/.test(n)));
+  const l=formulate({...base,porosity:"low"});
+  assert.ok(l.notes.some(n=>/Low porosity resists colour/.test(n))); assert.match(l.treat.steps[0],/optional on low porosity/);
 });

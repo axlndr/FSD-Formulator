@@ -63,6 +63,27 @@ function componentHex(name){
   if(name==="Bright Base" || /N\/N$/.test(name)) return null; // lightening booster / coverage: no tint
   const node=[...RINGS.light,...RINGS.dark,...PIGMENTS].find(x=>x.name===name); return node?node.hex:null;
 }
+/* ---------- Botanical Repair™ colour treatment ----------
+   From the Aveda Hair Color Professional Reference Guide (9.12.25), bond-building and strengthening colour treatment
+   guidelines: recommended with every colour service. Porosity decides how firmly the pre-treatment is worded;
+   texture and density pick the Bond Activator. */
+export function treatmentPlan(inp, rows, mult){
+  const por=inp.porosity||"", tex=inp.htype||"", den=inp.density||"";
+  const colourG=rows.reduce((a,r)=>a+parseFloat(r[0]),0); // every colour component, before Catalyst
+  const additive=Math.round(colourG*8/40*2)/2;
+  const rich = tex==="1" || den==="1"; const light = tex==="-1" || (tex==="0" && den!=="1");
+  const activator = rich && !light ? "Rich" : light && !rich ? "Light" : "Light or Rich";
+  const steps=[];
+  const primerWhy = por==="compromised" ? "required: equalizes porosity so compromised hair takes colour evenly" : por==="high" ? "required: equalizes porosity for even deposit" : por==="low" ? "optional on low porosity; it conditions and primes" : "equalizes porosity for even deposit";
+  steps.push(`Spray 5 ml Botanical Repair™ Professional Equalizing Primer on dry hair and comb through (${primerWhy}). Blow-dry in if desired.`);
+  steps.push(`Mix ${additive} g Botanical Repair™ Professional Hair Strengthening Additive into the ${Math.round(colourG)} g of colour (8 g per 40 g).`);
+  steps.push("Apply and process as formulated, at room temperature. No heat.");
+  steps.push("Rinse and shampoo with Botanical Repair™ Strengthening Shampoo.");
+  steps.push(`Apply 20 g Botanical Repair™ Professional Bond Activator ${activator}${activator==="Light or Rich"?" (Light for fine-to-medium, Rich for medium-to-thick)":""}, process 10 minutes and rinse.`);
+  const level = por==="compromised" ? "required" : por==="high" ? "required" : "recommended";
+  const lead = por==="compromised" ? "Highly compromised hair: perform the full bond-building and strengthening colour treatment; consider the Restorative Treatment as a separate service first." : por==="high" ? "High porosity: perform the full bond-building and strengthening colour treatment." : "Aveda recommends the bond-building and strengthening colour treatment with every colour service (adds about 15 minutes).";
+  return {level, lead, steps};
+}
 export function predictHex({n,d,nrp,rows}){
   n=+n; d=+d; rows=rows||[];
   const nat=rows.filter(r=>/^\d+N$/.test(r[1])); const natG=nat.reduce((a,r)=>a+parseFloat(r[0]),0);
@@ -156,11 +177,10 @@ export function formulate(inp){
   const vol = dev.label;
   const time = lifting ? "30 min, room temperature" : "20 min, room temperature";
   const rows=[]; let catalystBase=0; let kicker="Suggested formula"; let shadeOut="";
-  const por=inp.porosity||"";
-  if(por==="high") notes.unshift("Pre-treat: Botanical Repair™ Equalizing Primer, up to 30 sprays (30 ml), before colouring.");
-  if(por==="high"||por==="compromised") notes.unshift("Pre-treat: Botanical Repair™ Bond-Building and Strengthening Treatment before colouring.");
-  if(por==="compromised") notes.push("Highly compromised hair takes colour fast and unevenly; strand test and watch processing closely.");
-  const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o};
+  if((inp.porosity||"")==="low") notes.push("Low porosity resists colour: saturate thoroughly, allow the full processing time and strand test.");
+  if((inp.porosity||"")==="high") notes.push("High porosity accepts colour faster and can grab cool tones: watch processing and strand test.");
+  if((inp.porosity||"")==="compromised") notes.push("Highly compromised hair takes colour fast and unevenly: strand test and watch processing closely.");
+  const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o}; r.treat=treatmentPlan(inp, r.rows, mult);
     r.result=predictHex({n, d, nrp, rows:r.rows}); if(r.alt) r.alt.result=predictHex({n, d, nrp, rows:r.alt.rows}); return r; };
 
   /* --- Vibrant Red series (Red Base) --- */
@@ -294,7 +314,6 @@ export function formulate(inp){
   if(exposure==="none" && mode==="auto") notes.push("Going darker or same-level: no NRP is lifted. If the hair was previously lightened, treat the existing warmth as exposed NRP and choose a neutralizing mode.");
   if(!lifting) notes.push("Going darker is deposit only; if the hair has been lightened before, replace warmth with a warm Pure Tone or the result can go cool and flat.");
   if(shades.includes(14)) notes.push("14N gives an extra half level of lift on 20 Volume. Off the scalp, 30 Volume adds a half level and 40 Volume a full level.");
-  notes.push("Bond-building: add 4 g Botanical Repair™ Strengthening Additive per 20 g of colour. No heat.");
   // Pure Tone route as the alternative to the controlling base
   let alt=null;
   if(mode==="auto" && (exposure==="moderate"||exposure==="strong") && plan==="base" && ptPlan && !(ptStd===0 && !split)){
