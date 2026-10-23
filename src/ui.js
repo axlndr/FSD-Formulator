@@ -38,30 +38,35 @@ function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n
 const hexRGB=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
 const TILE={natural:"Neutral",beigeash:"Beige Ash",gold:"Gold",copper:"Copper",rr:"Red/Red",rv:"Red/Violet",pink:"Pink",grey:"Grey",greyash:"Grey Ash",blueash:"Blue Ash",violetash:"Violet Ash",violet:"Violet",
   matte:"Matte",imatte:"Intense Matte",vcopper:"Copper",vred:"Red",vrv:"Red/Violet",ctrl:"Auto base",ctrlgreen:"Green",ctrlblue:"Blue",ctrlviolet:"Violet",blend:"Custom"};
-// Display colours: the formulation hexes are realistic hair tones; for tiles we show them cleaner and more saturated.
+// Display colours: the formulation hexes are realistic hair tones; tiles show them cleaner, and the ring uses hand-tuned arcs.
 function vivid(hex){ const [h,s,l]=rgb2hsl(hexRGB(hex)); const S=Math.min(.74,s*1.2+.05), L=Math.min(.58,Math.max(.44,l+.1)); const c=hsl2rgb(h,S,L).map(v=>Math.round(v)); return `rgb(${c[0]},${c[1]},${c[2]})`; }
-const WEDGES=[ // clockwise from 12 o'clock, 90° each
-  {fam:"Warm", from:0,   stops:["gold","copper","rr","rv","pink"]},
-  {fam:"Vibrant Reds", from:90, stops:["vcopper","vred","vrv"]},
-  {fam:"Cool", from:180, stops:["violet","violetash","blueash","greyash","grey"]},
-  {fam:"Matte-Olive", from:270, stops:["imatte","matte"]} ];
+const WEDGES=[ // clockwise from 12 o'clock, 90° each; arc colours tuned by hand so the ring stays rich but not neon
+  {fam:"Warm",         from:0,   arc:["#D9A441","#D4692E","#BE3A33","#9E3F72"]},
+  {fam:"Vibrant Reds", from:90,  arc:["#D0491F","#B52222","#8F2559"]},
+  {fam:"Cool",         from:180, arc:["#6B57A6","#5D77B9","#7C8CA0","#9C9C9C"]},
+  {fam:"Matte-Olive",  from:270, arc:["#4C8A5C","#A6A73C"]} ];
 let openFam=null;
 { const picker=$("tonePicker");
-  const grad=w=>{ const n=w.stops.length; return `conic-gradient(from ${w.from}deg,${w.stops.map((k,i)=>`${vivid(TONES[k].hex)} ${(i/(n-1))*90}deg`).join(",")})`; };
-  const quad="M100,4 A96,96 0 0 1 196,100 L136,100 A36,36 0 0 0 100,64 Z";
+  const grad=w=>{ const n=w.arc.length; return `conic-gradient(from ${w.from}deg,${w.arc.map((c,i)=>`${c} ${(i/(n-1))*90}deg`).join(",")})`; };
+  const quad="M100,4 A96,96 0 0 1 196,100 L158,100 A58,58 0 0 0 100,42 Z";
   picker.innerHTML=`<div class="wheelbox">
     <div class="cwheel">
-      ${WEDGES.map((w,i)=>`<button type="button" class="wedge q${i}" data-fam="${w.fam}" aria-pressed="false" style="--grad:${grad(w)}"><span>${w.fam.replace("-Olive","")}</span></button>`).join("")}
-      <button type="button" class="hub" data-fam="Neutral-Beige" aria-pressed="false" style="--c:${vivid(TONES.natural.hex)};--c2:${vivid(TONES.beigeash.hex)}"><span>Neutral</span></button>
-      <svg class="wsvg" viewBox="0 0 200 200" aria-hidden="true">${[0,90,180,270].map(a=>`<path d="${quad}" transform="rotate(${a} 100 100)"/>`).join("")}<circle cx="100" cy="100" r="36"/></svg>
+      ${WEDGES.map((w,i)=>`<span class="wl l${i}">${w.fam.replace("-Olive","")}</span>`).join("")}
+      <div class="ring">
+        ${WEDGES.map((w,i)=>`<button type="button" class="wedge q${i}" data-fam="${w.fam}" aria-pressed="false" aria-label="${w.fam}" style="--grad:${grad(w)}"></button>`).join("")}
+        <button type="button" class="hub" data-fam="Neutral-Beige" aria-pressed="false" style="--c:#B99274;--c2:#D8B898"><span>Neutral</span></button>
+        <svg class="wsvg" viewBox="0 0 200 200" aria-hidden="true">${[0,90,180,270].map(a=>`<path d="${quad}" transform="rotate(${a} 100 100)"/>`).join("")}<circle cx="100" cy="100" r="56"/></svg>
+      </div>
     </div>
-    <button type="button" class="corner cl tile wheeltile" data-tone="blend" role="radio" aria-checked="false"><i></i><span>Custom</span></button>
-    <button type="button" class="corner cr tile" data-fam="Controlling Base" aria-pressed="false" style="--c:#2d4f8f;--c2:#5a3f8f;--c3:#2f7a4a"><i class="bases"></i><span>Controlling Base</span></button>
+    <div class="alts">
+      <button type="button" class="pill" data-tone="blend" role="radio" aria-checked="false"><i class="dot wheeldot"></i>Custom</button>
+      <button type="button" class="pill" data-fam="Controlling Base" aria-pressed="false"><i class="dot basedot"></i>Controlling Base</button>
+    </div>
   </div>
   <div class="palette" id="palette" hidden><div class="itemhead"><span class="lbl" id="palName"></span><span class="val gsel" id="palSel"></span></div><div class="tiles" id="palTiles"></div></div>`;
   picker.appendChild($("blendPanel"));
   picker.addEventListener("click",e=>{
-    const t=e.target.closest(".tile[data-tone]"); if(t){ tone.value = tone.value===t.dataset.tone ? "" : t.dataset.tone; if(tone.value==="blend") openFam=null; syncPicker(); compute(); return; }
+    const t=e.target.closest("[data-tone]"); if(t){ tone.value = tone.value===t.dataset.tone ? "" : t.dataset.tone; if(tone.value==="blend") openFam=null; syncPicker(); compute(); return; }
     const f=e.target.closest("[data-fam]"); if(f){ openFam = openFam===f.dataset.fam ? null : f.dataset.fam; if(openFam && tone.value==="blend"){ tone.value=""; compute(); } syncPicker(); }
   });
 }
@@ -75,7 +80,7 @@ function syncPicker(){
     $("palName").textContent=openFam; $("palSel").textContent = t&&t.group===openFam ? (SHORT[tone.value]||t.name).replace(/:.*$/,"") : "";
     $("palTiles").innerHTML=ents.map(([k,x])=>`<button type="button" class="tile" role="radio" aria-checked="${k===tone.value}" data-tone="${k}" style="--c:${vivid(x.hex)}" aria-label="${x.name}"><i></i><span>${TILE[k]||x.name}</span></button>`).join("");
     pal.hidden=false; } else pal.hidden=true;
-  document.querySelectorAll("#tonePicker .corner.tile[data-tone]").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.tone===tone.value)));
+  document.querySelectorAll("#tonePicker .pill[data-tone]").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.tone===tone.value)));
   $("blendPanel").hidden = tone.value!=="blend";
   const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; }
 
