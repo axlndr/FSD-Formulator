@@ -127,15 +127,18 @@ function compute(){
     $("outKicker").textContent="Waiting for input"; $("outShade").textContent="—"; $("outSub").textContent=`Choose the ${r.missing.join(", ").replace(/, ([^,]*)$/," and $1")} to see a formula.`;
     $("outMix").innerHTML=""; $("outAlt").hidden=true; ["outDir","outDev","outTime","outNrp"].forEach(id=>$(id).textContent="—");
     $("outNotes").innerHTML=""; $("outWhy").innerHTML=""; $("outWarn").hidden=true; $("outStop").hidden=true;
-    $("stripe").style.setProperty("--from","#3d3d3b"); $("stripe").style.setProperty("--to","#F26B43"); drawChart();
+    paint("#3d3d3b","#F26B43","#F26B43"); $("rvFrom").textContent=""; $("rvTo").textContent=""; drawChart();
+    $("barShade").textContent="Choose levels and a tone"; $("barLine").textContent=$("outSub").textContent; $("share").hidden=true;
     if(tone.value==="blend"){ drawRing(true,r.k); blendReadout(true,r.k,r.blendList); }
     return;
   }
-  $("outNrp").textContent=r.nrpText; $("stripe").style.setProperty("--from",r.stripe.from); $("stripe").style.setProperty("--to",r.stripe.to);
+  $("outNrp").textContent=r.nrpText; paint(r.stripe.from,r.stripe.to,r.stripe.to);
+  $("rvFrom").textContent=`NL ${nl.value}`; $("rvTo").textContent=`DL ${dl.value}`;
   $("outDir").textContent=r.dir; $("outSub").textContent=r.sub;
   if(tone.value==="blend" && r.blendList){ drawRing(r.isLight,r.k); blendReadout(r.isLight,r.k,r.blendList); }
   render(r);
 }
+function paint(from,to,toneHex){ for(const id of ["stripe","sheet"]){ const el=$(id); el.style.setProperty("--from",from); el.style.setProperty("--to",to); el.style.setProperty("--tone",toneHex); } }
 function mixRows(rowsIn,dev){
   const rows=rowsIn.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
   if(rowsIn.length){ const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
@@ -148,6 +151,8 @@ function render(o){
   $("outAlt").hidden=!o.alt;
   if(o.alt){ $("outAltKicker").textContent=o.alt.kicker||"Alternative · Pure Tone route"; $("outAltSub").textContent=o.alt.sub; $("outAltMix").innerHTML=mixRows(o.alt.rows,o.alt.dev); }
   $("outDev").textContent=o.dev; $("outTime").textContent=o.time;
+  $("barShade").textContent=o.shade; $("barLine").textContent=`${o.rows.map(r=>`${r[0]} ${r[1]}`).join(" + ")} · ${o.dev}`;
+  $("share").hidden=!navigator.share;
   $("outNotes").innerHTML=o.notes.map(x=>`<li>${x}</li>`).join("");
   $("outWhy").innerHTML=o.why.map(x=>`<li>${x}</li>`).join("");
   $("outWarn").hidden=!o.warn; $("outWarn").textContent=o.warn||"";
@@ -164,16 +169,37 @@ function drawChart(){
 }
 
 /* ---------- Events ---------- */
-$("copy").addEventListener("click",()=>{
+function formulaText(){
   const lines=[...$("outMix").querySelectorAll("tr")].map(tr=>[...tr.children].map(td=>td.textContent).join("  ")).join("\n");
-  const text=`${$("outShade").textContent}\n${$("outSub").textContent}\n${lines}\n${$("outTime").textContent}`;
-  navigator.clipboard.writeText(text).then(()=>{$("status").textContent="Copied.";}).catch(()=>{$("status").textContent="Select the formula to copy it.";});
+  return `${$("outShade").textContent}\n${$("outSub").textContent}\n${lines}\n${$("outTime").textContent}`;
+}
+$("copy").addEventListener("click",()=>{
+  navigator.clipboard.writeText(formulaText()).then(()=>{$("status").textContent="Copied.";}).catch(()=>{$("status").textContent="Select the formula to copy it.";});
 });
+$("share").addEventListener("click",()=>{
+  const data={title:"Full Spectrum Deep formula",text:formulaText()};
+  if(location.protocol==="https:" && !location.hostname.endsWith("claude.ai")) data.url=location.href;
+  navigator.share(data).then(()=>{$("status").textContent="Shared.";}).catch(e=>{ if(e && e.name!=="AbortError") $("copy").click(); });
+});
+
+/* Result sheet (phones): the bar at the bottom opens the full card */
+const sheet=$("sheet"), scrim=$("scrim");
+function openSheet(on){ sheet.classList.toggle("open",on); scrim.hidden=!on; $("bar").setAttribute("aria-expanded",String(on)); if(on) sheet.querySelector(".sheetbody").scrollTop=0; }
+$("bar").addEventListener("click",()=>openSheet(!sheet.classList.contains("open")));
+scrim.addEventListener("click",()=>openSheet(false));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && sheet.classList.contains("open")) openSheet(false); });
+matchMedia("(min-width:900px)").addEventListener("change",e=>{ if(e.matches) openSheet(false); });
+
+/* How-to: open on the first visit, folded after that (per browser) */
+try{ if(localStorage.getItem("fsd-howto-seen")){ $("howto").open=false; } else { localStorage.setItem("fsd-howto-seen","1"); } }catch(_){}
+
+/* Advanced row summary */
+function advLabel(){ const sel=id=>$(id).options[$(id).selectedIndex].text.split(" (")[0]; $("advSel").textContent=`NRP ${sel("nrpMode")} · ${sel("strength")} · ${sel("batch").replace(" base","")}`; }
 function hairLabel(){ const t=$("texture"),ty=$("htype"),de=$("density"),sc=$("scalp"); const parts=[t.value!==""&&t.options[t.selectedIndex].text.split(" · ")[0], ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
-[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ hairLabel(); compute(); }));
+[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ hairLabel(); advLabel(); compute(); }));
 $("noneToggle").addEventListener("click",()=>{ tone.value = tone.value==="bare" ? "" : "bare"; syncPicker(); compute(); });
-$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; hairLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; syncPresets(); syncPicker(); compute(); nl.focus(); });
-compute();
+$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; syncPresets(); syncPicker(); compute(); nl.focus(); });
+advLabel(); compute();
 
 /* ---------- Offline / installable (GitHub Pages only; the artifact wrapper has no service worker scope) ---------- */
 if("serviceWorker" in navigator && location.protocol==="https:" && !location.hostname.endsWith("claude.ai")){
