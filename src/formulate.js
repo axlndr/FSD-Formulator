@@ -67,6 +67,8 @@ function componentHex(name){
    From the Aveda Hair Color Professional Reference Guide (9.12.25), bond-building and strengthening colour treatment
    guidelines: recommended with every colour service. Porosity decides how firmly the pre-treatment is worded;
    texture and density pick the Bond Activator. */
+export const ADDITIVE="Botanical Repair™ Hair Strengthening Additive";
+export function additiveFor(rows){ const colourG=rows.reduce((a,r)=>a+parseFloat(r[0]),0); const gAdd=Math.round(colourG*8/40*2)/2; return gAdd>0 ? [g(gAdd), ADDITIVE] : null; }
 export function treatmentPlan(inp, rows, mult){
   const por=inp.porosity||"", tex=inp.htype||"", den=inp.density||"";
   const colourG=rows.reduce((a,r)=>a+parseFloat(r[0]),0); // every colour component, before Catalyst
@@ -76,12 +78,12 @@ export function treatmentPlan(inp, rows, mult){
   const steps=[];
   const primerWhy = por==="compromised" ? "required: equalizes porosity so compromised hair takes colour evenly" : por==="high" ? "required: equalizes porosity for even deposit" : por==="low" ? "optional on low porosity; it conditions and primes" : "equalizes porosity for even deposit";
   steps.push(`Spray 5 ml Botanical Repair™ Professional Equalizing Primer on dry hair and comb through (${primerWhy}). Blow-dry in if desired.`);
-  steps.push(`Mix ${additive} g Botanical Repair™ Professional Hair Strengthening Additive into the ${Math.round(colourG)} g of colour (8 g per 40 g).`);
+  steps.push(`Mix the ${additive} g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the ${Math.round(colourG)} g of colour (8 g per 40 g).`);
   steps.push("Apply and process as formulated, at room temperature. No heat.");
   steps.push("Rinse and shampoo with Botanical Repair™ Strengthening Shampoo.");
   steps.push(`Apply 20 g Botanical Repair™ Professional Bond Activator ${activator}${activator==="Light or Rich"?" (Light for fine-to-medium, Rich for medium-to-thick)":""}, process 10 minutes and rinse.`);
-  const level = por==="compromised" ? "required" : por==="high" ? "required" : "recommended";
-  const lead = por==="compromised" ? "Highly compromised hair: perform the full bond-building and strengthening colour treatment; consider the Restorative Treatment as a separate service first." : por==="high" ? "High porosity: perform the full bond-building and strengthening colour treatment." : "Aveda recommends the bond-building and strengthening colour treatment with every colour service (adds about 15 minutes).";
+  const level = (por==="compromised"||por==="high") ? "highly recommended" : "recommended";
+  const lead = por==="compromised" ? "Highly recommended on compromised hair: the primer equalizes porosity so colour deposits evenly, the additive rebuilds bonds while the colour processes, and the activator restores strength and reduces breakage after. Consider the Restorative Treatment as a separate service first." : por==="high" ? "Highly recommended on high-porosity hair: the primer equalizes porosity so colour deposits evenly instead of grabbing at the porous areas, and the additive and activator protect the hair through the service." : "Aveda recommends the bond-building and strengthening colour treatment with every colour service (adds about 15 minutes).";
   return {level, lead, steps};
 }
 export function predictHex({n,d,nrp,rows}){
@@ -180,7 +182,7 @@ export function formulate(inp){
   if((inp.porosity||"")==="low") notes.push("Low porosity resists colour: saturate thoroughly, allow the full processing time and strand test.");
   if((inp.porosity||"")==="high") notes.push("High porosity accepts colour faster and can grab cool tones: watch processing and strand test.");
   if((inp.porosity||"")==="compromised") notes.push("Highly compromised hair takes colour fast and unevenly: strand test and watch processing closely.");
-  const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o}; r.treat=treatmentPlan(inp, r.rows, mult);
+  const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o}; r.treat=treatmentPlan(inp, r.rows, mult); r.additive=additiveFor(r.rows); if(r.alt) r.alt.additive=additiveFor(r.alt.rows);
     r.result=predictHex({n, d, nrp, rows:r.rows}); if(r.alt) r.alt.result=predictHex({n, d, nrp, rows:r.alt.rows}); return r; };
 
   /* --- Vibrant Red series (Red Base) --- */

@@ -220,14 +220,21 @@ test("formulate attaches a result colour to the formula and its alternative", ()
 test("Botanical Repair colour treatment plan follows the Reference Guide", () => {
   const base={nl:"5",dl:"8",tone:"copper",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
   const r=formulate({...base,porosity:"high",htype:"-1"});
-  assert.equal(r.treat.level,"required");
+  assert.equal(r.treat.level,"highly recommended"); assert.deepEqual(r.additive,["4.5 g","Botanical Repair™ Hair Strengthening Additive"]);
   assert.match(r.treat.steps[0],/5 ml Botanical Repair™ Professional Equalizing Primer/);
-  assert.match(r.treat.steps[1],/4\.5 g Botanical Repair™ Professional Hair Strengthening Additive into the 23 g of colour \(8 g per 40 g\)/);
+  assert.match(r.treat.steps[1],/4\.5 g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the 23 g of colour \(8 g per 40 g\)/);
   assert.match(r.treat.steps[4],/Bond Activator Light, process 10 minutes/);
   const m=formulate({...base,porosity:"medium",htype:"1"});
   assert.equal(m.treat.level,"recommended"); assert.match(m.treat.steps[4],/Bond Activator Rich/);
   const c=formulate({...base,porosity:"compromised"});
-  assert.match(c.treat.lead,/Restorative Treatment/); assert.ok(c.notes.some(n=>/takes colour fast and unevenly/.test(n)));
+  assert.equal(c.treat.level,"highly recommended"); assert.match(c.treat.lead,/Highly recommended on compromised hair/); assert.match(c.treat.lead,/Restorative Treatment/); assert.ok(c.notes.some(n=>/takes colour fast and unevenly/.test(n)));
   const l=formulate({...base,porosity:"low"});
   assert.ok(l.notes.some(n=>/Low porosity resists colour/.test(n))); assert.match(l.treat.steps[0],/optional on low porosity/);
+});
+
+test("every formula carries the Strengthening Additive at 8 g per 40 g of colour", () => {
+  const base={nl:"3",dl:"6",tone:"imatte",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
+  const r=formulate(base); // 15 g 9N + 5 g Green Base + 6 g Light G/G = 26 g colour
+  assert.deepEqual(r.additive,["5 g","Botanical Repair™ Hair Strengthening Additive"]);
+  if(r.alt) assert.ok(r.alt.additive);
 });

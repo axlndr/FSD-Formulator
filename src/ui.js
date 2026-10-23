@@ -236,22 +236,23 @@ function compute(){
   render(r);
 }
 function paint(from,to,toneHex){ for(const id of ["stripe","sheet"]){ const el=$(id); el.style.setProperty("--from",from); el.style.setProperty("--to",to); el.style.setProperty("--tone",toneHex); } }
-function mixRows(rowsIn,dev){
+function mixRows(rowsIn,dev,additive){
   const rows=rowsIn.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
-  if(rowsIn.length){ const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
-    const tot=rowsIn.reduce((a,r)=>a+parseFloat(r[0]),0)+parseFloat(d[0]); rows.push(`<tr class="total"><td>${Math.round(tot)} ml</td><td>total colour mixture</td></tr>`); }
+  if(rowsIn.length){ if(additive) rows.push(`<tr class="add"><td>${additive[0]}</td><td>${additive[1]}</td></tr>`);
+    const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
+    const tot=rowsIn.reduce((a,r)=>a+parseFloat(r[0]),0)+(additive?parseFloat(additive[0]):0)+parseFloat(d[0]); rows.push(`<tr class="total"><td>${Math.round(tot)} ml</td><td>total colour mixture</td></tr>`); }
   return rows.join("");
 }
 function render(o){
   $("outKicker").textContent=o.kicker; $("outShade").textContent=o.shade;
-  $("outMix").innerHTML=mixRows(o.rows,o.dev);
+  $("outMix").innerHTML=mixRows(o.rows,o.dev,o.additive);
   $("outAlt").hidden=!o.alt;
-  if(o.alt){ $("outAltKicker").textContent=o.alt.kicker||"Alternative · Pure Tone route"; $("outAltSub").textContent=o.alt.sub; $("outAltMix").innerHTML=mixRows(o.alt.rows,o.alt.dev); }
+  if(o.alt){ $("outAltKicker").textContent=o.alt.kicker||"Alternative · Pure Tone route"; $("outAltSub").textContent=o.alt.sub; $("outAltMix").innerHTML=mixRows(o.alt.rows,o.alt.dev,o.alt.additive); }
   $("outDev").textContent=o.dev; $("outTime").textContent=o.time;
   $("barShade").textContent=o.shade; $("barLine").textContent=`${o.rows.map(r=>`${r[0]} ${r[1]}`).join(" + ")} · ${o.dev}`;
   $("share").hidden=!navigator.share;
   $("outNotes").innerHTML=o.notes.map(x=>`<li>${x}</li>`).join("");
-  if(o.treat){ $("outTreat").hidden=false; $("outTreatLevel").textContent=o.treat.level; $("outTreat").classList.toggle("req",o.treat.level==="required"); $("outTreat").open = o.treat.level==="required";
+  if(o.treat){ $("outTreat").hidden=false; $("outTreatLevel").textContent=o.treat.level; $("outTreat").classList.toggle("req",o.treat.level.startsWith("highly")); $("outTreat").open = o.treat.level.startsWith("highly");
     $("outTreatLead").textContent=o.treat.lead; $("outTreatSteps").innerHTML=o.treat.steps.map(x=>`<li>${x}</li>`).join(""); } else $("outTreat").hidden=true;
   $("outWhy").innerHTML=o.why.map(x=>`<li>${x}</li>`).join("");
   $("outWarn").hidden=!o.warn; $("outWarn").textContent=o.warn||"";
