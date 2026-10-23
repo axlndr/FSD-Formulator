@@ -238,3 +238,12 @@ test("every formula carries the Strengthening Additive at 8 g per 40 g of colour
   assert.deepEqual(r.additive,["5 g","Botanical Repair™ Hair Strengthening Additive"]);
   if(r.alt) assert.ok(r.alt.additive);
 });
+
+test("grey with lift: NRP is named in the walkthrough and a neutralizing alternative is offered for a neutral result", () => {
+  const base={nl:"4",dl:"6",tone:"natural",grey:"50",cov:"max",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
+  const r=formulate(base);
+  assert.deepEqual(r.rows,[["20 g","8N"],["8 g","Light N/N"]]); // deck formula stays primary
+  assert.ok(r.alt && r.alt.rows.some(x=>x[1]==="Light N/N") && r.alt.rows.some(x=>/^Light /.test(x[1]) && x[1]!=="Light N/N"));
+  assert.ok(r.teach.some(x=>/still exposes red\/orange/.test(x)));
+  const w=formulate({...base,tone:"copper"}); assert.ok(w.teach.some(x=>/warm tone, so the NRP is enhanced/.test(x)));
+});
