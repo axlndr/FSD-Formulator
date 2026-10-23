@@ -1,6 +1,6 @@
 // Page wiring: reads the form, calls formulate(), renders the result and draws the colour wheel.
 import { GRID, DERIVED, TONES, SHORT, ORDER, RINGS, ringFor, PRESETS, PIGMENTS } from "./data.js";
-import { formulate, norm, nearestNode, nearestPigment, kFromR, pigFromR, rFromK, kLabel, blendList, recipeAngle } from "./formulate.js";
+import { formulate, norm, nearestNode, nearestPigment, kFromR, pigFromR, rFromK, kLabel, blendList, recipeAngle, levelHex } from "./formulate.js";
 
 const $ = id => document.getElementById(id);
 const nl=$("nl"), dl=$("dl"), tone=$("tone"), grey=$("grey"), cov=$("cov"), strength=$("strength"), batch=$("batch");
@@ -14,6 +14,23 @@ dl.innerHTML=`<option value="">Select…</option>`+[10,9,8,7,6,5,4,3,2,1].map(l=
   for(const [k,t] of Object.entries(TONES)){(groups[t.group]??=[]).push(`<option value="${k}">${t.name}</option>`);}
   tone.innerHTML=`<option value="">Select…</option><option value="bare">None (Natural Series alone)</option>`+ORDER.filter(g=>groups[g]).map(g=>`<optgroup label="${g}">${groups[g].join("")}</optgroup>`).join(""); }
 nl.value=""; dl.value=""; tone.value="";
+
+/* Level strips: ten swatches coloured by hair level; the hidden selects stay the source of truth */
+for(const [sel,strip] of [[nl,"nlStrip"],[dl,"dlStrip"]]){
+  $(strip).innerHTML=[1,2,3,4,5,6,7,8,9,10].map(l=>`<button type="button" class="lv" role="radio" aria-checked="false" data-l="${l}" style="--c:${levelHex(l)}" aria-label="Level ${l}"><span>${l}</span></button>`).join("");
+  $(strip).addEventListener("click",e=>{ const b=e.target.closest(".lv"); if(!b) return; sel.value = sel.value===b.dataset.l ? "" : b.dataset.l; sel.dispatchEvent(new Event("change",{bubbles:true})); });
+}
+function syncLevels(){
+  for(const [sel,strip,val] of [[nl,"nlStrip","nlVal"],[dl,"dlStrip","dlVal"]]){
+    $(strip).querySelectorAll(".lv").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.l===sel.value)));
+    $(val).textContent = sel.value ? `Level ${sel.value}` : "Choose"; $(val).classList.toggle("empty",!sel.value);
+  }
+}
+/* Row values: show the chosen option beside each label (the native picker sits invisibly on top) */
+function syncVals(){
+  document.querySelectorAll(".item.sel select").forEach(se=>{ const v=se.closest(".item").querySelector(".val"); const o=se.options[se.selectedIndex]; const empty=!se.value;
+    v.textContent = empty ? "Select" : o.text.replace(/\s*\(.*\)$/,""); v.classList.toggle("empty",empty); });
+}
 
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(v)));if(amt>0){r=f(r+(255-r)*amt);g=f(g+(255-g)*amt);b=f(b+(255-b)*amt);}else{r=f(r*(1+amt));g=f(g*(1+amt));b=f(b*(1+amt));}return `rgb(${r},${g},${b})`;}
 
@@ -36,7 +53,7 @@ function syncPicker(){
   if(t){ sel.querySelector("span").textContent=(SHORT[tone.value]||t.name).replace(/:.*$/,""); sw.style.setProperty("--c",t.hex); sw.style.setProperty("--hi",shade(t.hex,.35)); sw.style.setProperty("--lo",shade(t.hex,-.45)); }
   else { sel.querySelector("span").textContent="No tone selected"; sw.style.setProperty("--c","#3d3d3b"); sw.style.setProperty("--hi","#555"); sw.style.setProperty("--lo","#222"); }
   $("blendPanel").hidden = tone.value!=="blend";
-  const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("tonePicker").hidden=isNone;
+  const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; $("toneSelected").hidden=isNone;
   if(isNone) document.querySelectorAll("#tonePicker details[open]").forEach(d=>d.open=false); }
 
 /* ---------- Colour wheel ---------- */
@@ -196,10 +213,11 @@ try{ if(localStorage.getItem("fsd-howto-seen")){ $("howto").open=false; } else {
 /* Advanced row summary */
 function advLabel(){ const sel=id=>$(id).options[$(id).selectedIndex].text.split(" (")[0]; $("advSel").textContent=`NRP ${sel("nrpMode")} · ${sel("strength")} · ${sel("batch").replace(" base","")}`; }
 function hairLabel(){ const t=$("texture"),ty=$("htype"),de=$("density"),sc=$("scalp"); const parts=[t.value!==""&&t.options[t.selectedIndex].text.split(" · ")[0], ty.value!==""&&ty.options[ty.selectedIndex].text, de.value!==""&&de.options[de.selectedIndex].text, sc.value==="off"&&"Off scalp"].filter(Boolean); $("hairSel").textContent=parts.length?parts.join(" · "):"Optional"; }
-[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ hairLabel(); advLabel(); compute(); }));
-$("noneToggle").addEventListener("click",()=>{ tone.value = tone.value==="bare" ? "" : "bare"; syncPicker(); compute(); });
-$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; syncPresets(); syncPicker(); compute(); nl.focus(); });
-advLabel(); compute();
+[nl,dl,tone,grey,cov,strength,batch,$("nrpMode"),$("texture"),$("htype"),$("density"),$("scalp")].forEach(el=>el.addEventListener("change",()=>{ syncLevels(); syncVals(); hairLabel(); advLabel(); compute(); }));
+$("noneToggle").addEventListener("click",()=>{ if(tone.value!=="bare"){ tone.value="bare"; syncPicker(); compute(); } });
+$("toneMode").addEventListener("click",()=>{ if(tone.value==="bare"){ tone.value=""; syncPicker(); compute(); } });
+$("reset").addEventListener("click",()=>{ nl.value=""; dl.value=""; tone.value=""; grey.value="0"; cov.value="natural"; strength.value="auto"; batch.value="1"; $("nrpMode").value="auto"; $("texture").value=""; $("htype").value=""; $("density").value=""; $("scalp").value="on"; syncLevels(); syncVals(); hairLabel(); advLabel(); $("status").textContent=""; blend.vivid=false; blend.preset=null; blend.k=null; blend.pigF=0; blend.ang=30; syncPresets(); syncPicker(); compute(); $("nlStrip").querySelector(".lv").focus(); });
+syncLevels(); syncVals(); advLabel(); compute();
 
 /* ---------- Offline / installable (GitHub Pages only; the artifact wrapper has no service worker scope) ---------- */
 if("serviceWorker" in navigator && location.protocol==="https:" && !location.hostname.endsWith("claude.ai")){

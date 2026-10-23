@@ -21,7 +21,8 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Full Spectrum Deep<sup>™</sup><br>Formulator</h1>
+    <p class="overline">Full Spectrum Deep<sup>™</sup></p>
+    <h1>Formulator</h1>
     <details class="howtobox" id="howto" open>
       <summary>How to use</summary>
       <ol class="howto">
@@ -35,28 +36,36 @@
 
   <div class="cols">
   <fieldset class="inputs">
-    <div class="row">
-      <label for="nl">Natural level (NL)
-        <select id="nl"></select>
-        <span class="hint">Guest's natural starting level</span>
-      </label>
-      <label for="dl">Desired level (DL)
-        <select id="dl"></select>
-        <span class="hint">Guest's desired end result</span>
-      </label>
+    <div class="group">
+      <div class="item stack">
+        <div class="itemhead"><span class="lbl">Natural level</span><span class="val" id="nlVal">Choose</span></div>
+        <div class="levels" id="nlStrip" role="radiogroup" aria-label="Natural level"></div>
+        <select id="nl" class="sr" aria-hidden="true" tabindex="-1"></select>
+        <p class="hint">Guest's natural starting level</p>
+      </div>
+      <div class="item stack">
+        <div class="itemhead"><span class="lbl">Desired level</span><span class="val" id="dlVal">Choose</span></div>
+        <div class="levels" id="dlStrip" role="radiogroup" aria-label="Desired level"></div>
+        <select id="dl" class="sr" aria-hidden="true" tabindex="-1"></select>
+        <p class="hint">Guest's desired end result</p>
+      </div>
     </div>
-    <div class="field">
-      <div class="fieldhead"><div class="fieldlabel" id="toneLabel">Desired (reflective) tone</div><button type="button" id="noneToggle" aria-pressed="false">None</button></div>
-      <select id="tone" class="sr" aria-hidden="true" tabindex="-1"></select>
-      <div id="toneSelected" class="tsel"><i class="sw" style="--c:#3d3d3b;--hi:#555;--lo:#222"></i><span>No tone selected</span></div>
+
+    <div class="group">
+      <div class="item stack tonehead">
+        <div class="itemhead">
+          <span class="lbl" id="toneLabel">Desired reflective tone</span>
+          <div class="seg" role="group" aria-label="Tone or none"><button type="button" id="toneMode" aria-pressed="true">Tone</button><button type="button" id="noneToggle" aria-pressed="false">None</button></div>
+        </div>
+        <select id="tone" class="sr" aria-hidden="true" tabindex="-1"></select>
+        <div id="toneSelected" class="tsel"><i class="sw" style="--c:#3d3d3b;--hi:#555;--lo:#222"></i><span>No tone selected</span></div>
+      </div>
       <div id="tonePicker" role="radiogroup" aria-labelledby="toneLabel"></div>
       <div id="blendPanel" class="blend" hidden>
-        <div class="ghead">Custom tones</div>
         <div id="presetChips" class="pchips"></div>
         <div class="ringwrap">
           <div class="disc"><canvas id="ringCanvas" width="360" height="360"></canvas><svg id="ring" viewBox="0 0 360 360" role="img" aria-label="Pure Tone colour wheel: angle sets the blend, distance from centre sets intensity"></svg></div>
           <div class="ringside">
-            <div class="ghead">Colour wheel</div>
             <p class="hint">Tap or drag anywhere on the wheel. Where you land around the wheel chooses the tone; how far from the centre chooses the strength. Centre is the softest reflection, the middle is standard, and toward the edge Pure Pigment is added for more intensity.</p>
             <p class="hint">The rings show where every tone sits and how strong it is, weakest inside to strongest outside: Light Pure Tones, then Pure Pigments, then Dark Pure Tones. The set that matches your shade is bright. Tap a Pure Tone on its ring to use it strong, or a Pure Pigment to use it on its own.</p>
             <div id="blendReadout" class="readout">—</div>
@@ -64,8 +73,9 @@
         </div>
       </div>
     </div>
-    <div class="row">
-      <label for="grey">Grey
+
+    <div class="group">
+      <label class="item sel"><span class="lbl">Grey</span><span class="val"></span>
         <select id="grey">
           <option value="0">None / not a factor</option>
           <option value="30">Up to 30%</option>
@@ -73,47 +83,42 @@
           <option value="75">More than 50%</option>
         </select>
       </label>
-      <label for="cov" id="covLabel">Coverage
+      <label class="item sel" id="covLabel"><span class="lbl">Coverage</span><span class="val"></span>
         <select id="cov">
           <option value="natural">Natural coverage</option>
           <option value="max">Maximum coverage</option>
         </select>
       </label>
     </div>
-    <details class="section" id="hairSection">
-      <summary><span>Guest's hair variables</span><span class="gsel" id="hairSel">Optional</span></summary>
-      <div class="secbody">
-    <div class="row three">
-      <label for="texture">Pattern
+
+    <details class="group section" id="hairSection">
+      <summary class="item"><span class="lbl">Guest's hair variables</span><span class="val" id="hairSel">Optional</span></summary>
+      <label class="item sel"><span class="lbl">Pattern</span><span class="val"></span>
         <select id="texture"><option value="">Select…</option><option value="0">1A–2A · Straight to soft wave</option><option value="0.5">2B–3B · Moderate wave to moderate curl</option><option value="1">3C–4C · Strong curl to strong coil</option></select>
       </label>
-      <label for="htype">Texture
+      <label class="item sel"><span class="lbl">Texture</span><span class="val"></span>
         <select id="htype"><option value="">Select…</option><option value="-1">Fine</option><option value="0">Medium</option><option value="1">Coarse</option></select>
       </label>
-      <label for="density">Density
+      <label class="item sel"><span class="lbl">Density</span><span class="val"></span>
         <select id="density"><option value="">Select…</option><option value="-1">Thin</option><option value="0">Medium</option><option value="1">Thick</option></select>
       </label>
-    </div>
-    <label for="scalp">Application
-      <select id="scalp"><option value="on">On the scalp (20 Volume maximum)</option><option value="off">Off the scalp (30/40 Volume allowed)</option></select>
-    </label>
-      </div>
+      <label class="item sel"><span class="lbl">Application</span><span class="val"></span>
+        <select id="scalp"><option value="on">On the scalp (20 Volume maximum)</option><option value="off">Off the scalp (30/40 Volume allowed)</option></select>
+      </label>
     </details>
-    <details class="section" id="advSection">
-      <summary><span>Advanced</span><span class="gsel" id="advSel">Auto · Auto · 20 g</span></summary>
-      <div class="secbody">
-    <label for="nrpMode">NRP
-      <select id="nrpMode">
-        <option value="auto">Auto (recommended)</option>
-        <option value="enhance">Enhance NRP (reflection only, no neutralizing)</option>
-        <option value="base">Always neutralize with a controlling base</option>
-        <option value="pt">Always neutralize with Pure Tones</option>
-        <option value="chart">Chart formula as printed</option>
-      </select>
-      <span class="hint">Auto will weigh the levels of lift with the NRP at the desired level and whether it needs to be refined, neutralized, or enhanced based on the desired reflective tone</span>
-    </label>
-    <div class="row">
-      <label for="strength">Tone intensity
+
+    <details class="group section" id="advSection">
+      <summary class="item"><span class="lbl">Advanced</span><span class="val" id="advSel"></span></summary>
+      <label class="item sel"><span class="lbl">NRP</span><span class="val"></span>
+        <select id="nrpMode">
+          <option value="auto">Auto (recommended)</option>
+          <option value="enhance">Enhance NRP (reflection only, no neutralizing)</option>
+          <option value="base">Always neutralize with a controlling base</option>
+          <option value="pt">Always neutralize with Pure Tones</option>
+          <option value="chart">Chart formula as printed</option>
+        </select>
+      </label>
+      <label class="item sel"><span class="lbl">Tone intensity</span><span class="val"></span>
         <select id="strength">
           <option value="auto">Auto (from hair variables)</option>
           <option value="1">Standard</option>
@@ -122,15 +127,14 @@
           <option value="2">Intense (strong + Pure Pigment)</option>
         </select>
       </label>
-      <label for="batch">Batch size
+      <label class="item sel"><span class="lbl">Batch size</span><span class="val"></span>
         <select id="batch">
           <option value="1">20 g base (standard)</option>
           <option value="2">40 g base</option>
           <option value="3">60 g base</option>
         </select>
       </label>
-    </div>
-      </div>
+      <p class="foot">Auto weighs the levels of lift against the NRP at the desired level and decides whether it needs to be refined, neutralized or enhanced for the desired reflective tone.</p>
     </details>
   </fieldset>
 
@@ -143,7 +147,7 @@
     <div class="sheetbody" id="sheetBody">
     <div class="grab" aria-hidden="true"></div>
     <section class="card formula" aria-live="polite">
-      <div>
+      <div class="headline">
         <div class="eyebrow" id="outKicker">Suggested formula</div>
         <div class="shade" id="outShade">—</div>
         <div class="sub" id="outSub"></div>
@@ -164,21 +168,21 @@
       <ul class="notes" id="outNotes"></ul>
       <div class="flag warn" id="outWarn" hidden></div>
       <div class="flag stop" id="outStop" hidden></div>
-      <div class="btns"><button type="button" id="share" class="primary" hidden>Share</button><button type="button" id="copy">Copy formula</button><button type="button" id="reset">Reset</button><span class="status" id="status"></span></div>
+      <div class="btns"><button type="button" id="share" class="primary" hidden>Share</button><button type="button" id="copy" class="primary">Copy formula</button><button type="button" id="reset" class="quiet">Reset</button><span class="status" id="status"></span></div>
     </section>
 
-    <details>
+    <details class="more">
       <summary>How this formula was created</summary>
-      <ol id="outWhy" class="notes" style="margin-top:10px"></ol>
+      <ol id="outWhy" class="notes"></ol>
     </details>
 
-    <details>
+    <details class="more">
       <summary>Formulation chart</summary>
       <div class="gridwrap"><table class="grid" id="chart"></table></div>
       <p>Shaded cells: going darker with 5 or 10 Volume. Unshaded: going lighter with 20 Volume. X: hair must be prelightened; Full Spectrum Deep is not recommended. Two shades in one cell means equal parts. † Natural levels 7–10 are not on the printed chart; these rows are derived from the going-lighter equation and the one-shade-above rule for going darker.</p>
     </details>
 
-    <details>
+    <details class="more">
       <summary>Source</summary>
       <p>Full Spectrum Deep™ Systems training deck (GLOBAL, 10.1.26) and Participant Leaflet (8/2026): formulation chart, mixing and processing guidelines, warm and cool customization charts, Vibrant Red series, base customization and grey coverage guidelines. Always confirm against the printed Full Spectrum Deep Hair Color Chart and perform a strand test; natural remaining pigment, porosity and previous colour change the result.</p>
     </details>
