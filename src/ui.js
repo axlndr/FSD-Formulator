@@ -38,49 +38,39 @@ function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n
 const hexRGB=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
 const TILE={natural:"Neutral",beigeash:"Beige Ash",gold:"Gold",copper:"Copper",rr:"Red/Red",rv:"Red/Violet",pink:"Pink",grey:"Grey",greyash:"Grey Ash",blueash:"Blue Ash",violetash:"Violet Ash",violet:"Violet",
   matte:"Matte",imatte:"Intense Matte",vcopper:"Copper",vred:"Red",vrv:"Red/Violet",ctrl:"Auto base",ctrlgreen:"Green",ctrlblue:"Blue",ctrlviolet:"Violet",blend:"Custom"};
-// Display colours: the formulation hexes are realistic hair tones; tiles show them cleaner, and the ring uses hand-tuned arcs.
-function vivid(hex){ const [h,s,l]=rgb2hsl(hexRGB(hex)); const S=Math.min(.74,s*1.2+.05), L=Math.min(.58,Math.max(.44,l+.1)); const c=hsl2rgb(h,S,L).map(v=>Math.round(v)); return `rgb(${c[0]},${c[1]},${c[2]})`; }
-const WEDGES=[ // clockwise from 12 o'clock, 90° each; arc colours tuned by hand so the ring stays rich but not neon
-  {fam:"Warm",         from:0,   arc:["#D9A441","#D4692E","#BE3A33","#9E3F72"]},
-  {fam:"Vibrant Reds", from:90,  arc:["#D0491F","#B52222","#8F2559"]},
-  {fam:"Cool",         from:180, arc:["#6B57A6","#5D77B9","#7C8CA0","#9C9C9C"]},
-  {fam:"Matte-Olive",  from:270, arc:["#4C8A5C","#A6A73C"]} ];
+// Display colours: the formulation hexes are realistic hair tones; the picker shows them as glossy balls, lifted slightly.
+function vivid(hex){ const [h,s,l]=rgb2hsl(hexRGB(hex)); const S=Math.min(.7,s*1.15+.04), L=Math.min(.56,Math.max(.4,l+.06)); const c=hsl2rgb(h,S,L).map(v=>Math.round(v)); return `rgb(${c[0]},${c[1]},${c[2]})`; }
+const FAMS=ORDER.map(g=>g==="Matte-Olive"?{g,label:"Matte"}:g==="Neutral-Beige"?{g,label:"Neutral"}:{g,label:g});
 let openFam=null;
 { const picker=$("tonePicker");
-  const grad=w=>{ const n=w.arc.length; return `conic-gradient(from ${w.from}deg,${w.arc.map((c,i)=>`${c} ${(i/(n-1))*90}deg`).join(",")})`; };
-  const quad="M100,4 A96,96 0 0 1 196,100 L158,100 A58,58 0 0 0 100,42 Z";
-  picker.innerHTML=`<div class="wheelbox">
-    <div class="cwheel">
-      ${WEDGES.map((w,i)=>`<span class="wl l${i}">${w.fam.replace("-Olive","")}</span>`).join("")}
-      <div class="ring">
-        ${WEDGES.map((w,i)=>`<button type="button" class="wedge q${i}" data-fam="${w.fam}" aria-pressed="false" aria-label="${w.fam}" style="--grad:${grad(w)}"></button>`).join("")}
-        <button type="button" class="hub" data-fam="Neutral-Beige" aria-pressed="false" style="--c:#B99274;--c2:#D8B898"><span>Neutral</span></button>
-        <svg class="wsvg" viewBox="0 0 200 200" aria-hidden="true">${[0,90,180,270].map(a=>`<path d="${quad}" transform="rotate(${a} 100 100)"/>`).join("")}<circle cx="100" cy="100" r="56"/></svg>
-      </div>
-    </div>
-    <div class="alts">
-      <button type="button" class="pill" data-tone="blend" role="radio" aria-checked="false"><i class="dot wheeldot"></i>Custom</button>
-      <button type="button" class="pill" data-fam="Controlling Base" aria-pressed="false"><i class="dot basedot"></i>Controlling Base</button>
-    </div>
-  </div>
-  <div class="palette" id="palette" hidden><div class="itemhead"><span class="lbl" id="palName"></span><span class="val gsel" id="palSel"></span></div><div class="tiles" id="palTiles"></div></div>`;
+  picker.innerHTML=`<div class="tp">
+    <div class="preview"><i class="ball big" id="tpBall" style="--c:#c9c3bd"></i><div class="pname" id="tpName">Choose a tone</div><div class="pfam" id="tpFam">Pick a family, then a colour</div></div>
+    <div class="fams" id="fams">${FAMS.map(f=>`<button type="button" class="fam" data-fam="${f.g}" aria-pressed="false">${f.label}</button>`).join("")}</div>
+    <div class="strip" id="strip" hidden></div>
+  </div>`;
   picker.appendChild($("blendPanel"));
   picker.addEventListener("click",e=>{
-    const t=e.target.closest("[data-tone]"); if(t){ tone.value = tone.value===t.dataset.tone ? "" : t.dataset.tone; if(tone.value==="blend") openFam=null; syncPicker(); compute(); return; }
-    const f=e.target.closest("[data-fam]"); if(f){ openFam = openFam===f.dataset.fam ? null : f.dataset.fam; if(openFam && tone.value==="blend"){ tone.value=""; compute(); } syncPicker(); }
+    const t=e.target.closest("#strip [data-tone]"); if(t){ tone.value = tone.value===t.dataset.tone ? "" : t.dataset.tone; syncPicker(); compute(); return; }
+    const f=e.target.closest(".fam"); if(f){ const g=f.dataset.fam; openFam = openFam===g ? null : g;
+      if(openFam==="Custom"){ if(tone.value!=="blend"){ tone.value="blend"; compute(); } }
+      else if(tone.value==="blend"){ tone.value=""; compute(); }
+      syncPicker(); }
   });
 }
 function syncPicker(){
   const t=TONES[tone.value];
-  if(t && !t.blend && !t.bare && openFam==null) openFam=t.group;
-  document.querySelectorAll("#tonePicker [data-fam]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.fam===openFam)));
-  document.querySelectorAll("#tonePicker .wsvg path, #tonePicker .wsvg circle").forEach((el,i)=>{ const fam=i<4?WEDGES[i].fam:"Neutral-Beige"; el.classList.toggle("on", !!t && !t.blend && t.group===fam); });
-  const pal=$("palette");
-  if(openFam){ const ents=Object.entries(TONES).filter(([k,x])=>x.group===openFam);
-    $("palName").textContent=openFam; $("palSel").textContent = t&&t.group===openFam ? (SHORT[tone.value]||t.name).replace(/:.*$/,"") : "";
-    $("palTiles").innerHTML=ents.map(([k,x])=>`<button type="button" class="tile" role="radio" aria-checked="${k===tone.value}" data-tone="${k}" style="--c:${vivid(x.hex)}" aria-label="${x.name}"><i></i><span>${TILE[k]||x.name}</span></button>`).join("");
-    pal.hidden=false; } else pal.hidden=true;
-  document.querySelectorAll("#tonePicker .pill[data-tone]").forEach(b=>b.setAttribute("aria-checked",String(b.dataset.tone===tone.value)));
+  if(t && !t.bare && openFam==null) openFam=t.group;
+  document.querySelectorAll("#fams .fam").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.fam===openFam)));
+  const strip=$("strip");
+  if(openFam && openFam!=="Custom"){ const ents=Object.entries(TONES).filter(([k,x])=>x.group===openFam);
+    strip.innerHTML=ents.map(([k,x])=>`<button type="button" class="sw" role="radio" aria-checked="${k===tone.value}" data-tone="${k}" aria-label="${x.name}"><i class="ball" style="--c:${vivid(x.hex)}"></i><span>${TILE[k]||x.name}</span></button>`).join("");
+    strip.hidden=false; const on=strip.querySelector('[aria-checked="true"]'); if(on) on.scrollIntoView({block:"nearest",inline:"center"}); }
+  else strip.hidden=true;
+  // preview
+  const ball=$("tpBall"), name=$("tpName"), fam=$("tpFam");
+  if(t && t.blend){ const pr=blend.preset&&PRESETS[blend.preset]; ball.style.setProperty("--c", pr?vivid(pr.hex):"#b89a84"); ball.classList.toggle("multi",!pr); name.textContent=pr?pr.name:"Custom blend"; fam.textContent=pr?"Custom":"Set on the colour wheel below"; }
+  else if(t){ ball.style.setProperty("--c",vivid(t.hex)); ball.classList.remove("multi"); name.textContent=(SHORT[tone.value]||t.name).replace(/:.*$/,""); fam.textContent=FAMS.find(f=>f.g===t.group)?.label||t.group; }
+  else { ball.style.setProperty("--c","#c9c3bd"); ball.classList.remove("multi"); name.textContent="Choose a tone"; fam.textContent="Pick a family, then a colour"; }
   $("blendPanel").hidden = tone.value!=="blend";
   const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; }
 
@@ -117,7 +107,7 @@ function ringArcs(nodes,r0,r1,active,short){ let h=""; const n=nodes.length;
     h+=`<path d="M${x0},${y0} A${r1},${r1} 0 0 1 ${x1},${y1} L${x2},${y2} A${r0},${r0} 0 0 0 ${x3},${y3}Z" fill="${c.hex}" stroke="var(--bg)" stroke-width="1.5" opacity="${active?1:.55}"><title>${c.name}</title></path>`;
     const [px,py]=pol(c.ang,(r0+r1)/2); const lab=short(c.name); const arcLen=(a0-a1)*Math.PI/180*((r0+r1)/2)-6; const fs=Math.max(4.8,Math.min(7.4,arcLen/(lab.length*0.66)));
     const rot = c.ang>=0 ? 90-c.ang : -90-c.ang;
-    h+=`<text x="${px}" y="${py+fs*0.36}" transform="rotate(${rot.toFixed(1)} ${px.toFixed(1)} ${py.toFixed(1)})" fill="#111" font-size="${fs.toFixed(1)}" font-family="Aveda Mono,ui-monospace,Menlo,monospace" font-weight="700" text-anchor="middle" opacity="${active?1:.75}">${lab}</text>`; }
+    h+=`<text x="${px}" y="${py+fs*0.36}" transform="rotate(${rot.toFixed(1)} ${px.toFixed(1)} ${py.toFixed(1)})" fill="#1d1d1f" font-size="${fs.toFixed(1)}" font-family="Aveda Sans,-apple-system,system-ui,sans-serif" font-weight="700" text-anchor="middle" opacity="${active?1:.75}">${lab}</text>`; }
   return h; }
 function drawRing(isLight,kShow){
   drawDisc(isLight);
@@ -126,10 +116,10 @@ function drawRing(isLight,kShow){
   h+=`<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="var(--bg)" stroke-width="2"/>`;
   const code=n=>n.replace(/^(Light|Dark) /,"").replace("Grey (Gr)","Gr").replace("Pink (P)","P");
   h+=ringArcs(RINGS.light,LT0,LT1,isLight,code);
-  h+=ringArcs(PIGMENTS,RIM0,RIM1,true,n=>n.replace("Pure ","").toUpperCase());
+  h+=ringArcs(PIGMENTS,RIM0,RIM1,true,n=>n.replace("Pure ",""));
   h+=ringArcs(RINGS.dark,DK0,DK1,!isLight,code);
-  h+=`<text x="${CX}" y="${CY-6}" fill="rgba(255,255,255,.85)" font-size="9" font-family="Aveda Mono,ui-monospace,Menlo,monospace" letter-spacing="2" text-anchor="middle">${isLight?"LIGHT":"DARK"}</text>`;
-  h+=`<text x="${CX}" y="${CY+8}" fill="rgba(255,255,255,.7)" font-size="8" text-anchor="middle">softest</text>`;
+  h+=`<text x="${CX}" y="${CY-6}" fill="rgba(255,255,255,.9)" font-size="10" font-family="Aveda Sans,-apple-system,system-ui,sans-serif" font-weight="700" text-anchor="middle">${isLight?"Light":"Dark"}</text>`;
+  h+=`<text x="${CX}" y="${CY+8}" fill="rgba(255,255,255,.75)" font-size="8" font-family="Aveda Sans,-apple-system,system-ui,sans-serif" text-anchor="middle">softest</text>`;
   if(blend.preset){ const r=PRESETS[blend.preset]; const ring=[...ringFor(isLight),...PIGMENTS];
     r[isLight?"light":"dark"].forEach(([n,f])=>{ const nd=ring.find(x=>x.name===n); if(!nd) return; const rad = n.startsWith("Pure ")?(RIM0+RIM1)/2:isLight?(LT0+LT1)/2:(DK0+DK1)/2; const [qx,qy]=pol(nd.ang,rad);
       h+=`<circle cx="${qx}" cy="${qy}" r="${7+f*6}" fill="none" stroke="#fff" stroke-width="2.5"/>`; }); }
@@ -143,14 +133,14 @@ function ringPointer(e){ const svg=$("ring"), r=svg.getBoundingClientRect(); con
   const dx=x-CX, dy=CY-y; const ang=Math.round(Math.atan2(dy,dx)*180/Math.PI); const dist=Math.hypot(dx,dy); if(dist>DK1+6) return;
   const onRim = dist>=RIM0-2 && dist<=RIM1+2; const onTone = dist>R+1 && !onRim; const rn=Math.min(1,dist/R);
   blend.k = onRim||onTone ? 1.5 : kFromR(rn); blend.pigF = onRim ? 2 : (onTone ? 0 : pigFromR(rn)); blend.vivid=onRim; blend.muted = rn<0.18; blend.preset=null; blend.ang=ang;
-  syncPresets(); compute(); }
+  syncPresets(); syncPicker(); compute(); }
 { const svg=$("ring"); let down=false;
   svg.addEventListener("pointerdown",e=>{down=true; svg.setPointerCapture(e.pointerId); ringPointer(e);});
   svg.addEventListener("pointermove",e=>{ if(down) ringPointer(e); });
   svg.addEventListener("pointerup",()=>{down=false;}); svg.addEventListener("pointercancel",()=>{down=false;});
-  const groups={}; for(const [k,r] of Object.entries(PRESETS)){(groups[r.grp]??=[]).push(`<button type="button" class="pchip" role="radio" aria-checked="false" data-preset="${k}" style="--c:${r.hex}"><i class="sw"></i>${r.name}</button>`);}
-  $("presetChips").innerHTML=Object.entries(groups).map(([g,o])=>`<div class="pgroup"><div class="pl">${g}</div><div class="pchips">${o.join("")}</div></div>`).join("");
-  $("presetChips").addEventListener("click",e=>{const b=e.target.closest(".pchip"); if(!b) return; blend.preset=b.dataset.preset; blend.k=null; blend.pigF=0; blend.vivid=false; blend.ang=recipeAngle(blend.preset,lastIsLight); syncPresets(); compute();});
+  const groups={}; for(const [k,r] of Object.entries(PRESETS)){(groups[r.grp]??=[]).push(`<button type="button" class="sw pchip" role="radio" aria-checked="false" data-preset="${k}" aria-label="${r.name}"><i class="ball" style="--c:${vivid(r.hex)}"></i><span>${r.name}</span></button>`);}
+  $("presetChips").innerHTML=Object.entries(groups).map(([g,o])=>`<div class="pgroup"><div class="pl">${g}</div><div class="strip">${o.join("")}</div></div>`).join("");
+  $("presetChips").addEventListener("click",e=>{const b=e.target.closest(".pchip"); if(!b) return; blend.preset=b.dataset.preset; blend.k=null; blend.pigF=0; blend.vivid=false; blend.ang=recipeAngle(blend.preset,lastIsLight); syncPresets(); syncPicker(); compute();});
 }
 function syncPresets(){ document.querySelectorAll("#presetChips .pchip").forEach(b=>b.setAttribute("aria-checked", b.dataset.preset===blend.preset ? "true":"false")); }
 function blendReadout(isLight,k,list){
