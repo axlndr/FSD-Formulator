@@ -34,27 +34,23 @@ function syncVals(){
 
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=v=>Math.max(0,Math.min(255,Math.round(v)));if(amt>0){r=f(r+(255-r)*amt);g=f(g+(255-g)*amt);b=f(b+(255-b)*amt);}else{r=f(r*(1+amt));g=f(g*(1+amt));b=f(b*(1+amt));}return `rgb(${r},${g},${b})`;}
 
-/* ---------- Tone picker ---------- */
+/* ---------- Tone picker: one row per family, tones as colour tiles (same treatment as the level strips) ---------- */
+const TILE={natural:"Neutral",beigeash:"Beige Ash",gold:"Gold",copper:"Copper",rr:"Red/Red",rv:"Red/Violet",pink:"Pink",grey:"Grey",greyash:"Grey Ash",blueash:"Blue Ash",violetash:"Violet Ash",violet:"Violet",
+  matte:"Matte",imatte:"Intense Matte",vcopper:"Copper",vred:"Red",vrv:"Red/Violet",ctrl:"Auto base",ctrlgreen:"Green",ctrlblue:"Blue",ctrlviolet:"Violet",blend:"Custom"};
 { const picker=$("tonePicker");
   picker.innerHTML=ORDER.map(gname=>{
     const ents=Object.entries(TONES).filter(([k,t])=>t.group===gname);
-    const items=ents.map(([k,t])=>`<button type="button" class="chip" role="radio" aria-checked="false" data-tone="${k}" style="--c:${t.hex};--hi:${shade(t.hex,.35)};--lo:${shade(t.hex,-.45)}"><i class="sw"></i><span>${SHORT[k]||t.name}</span></button>`).join("");
-    const dots=(gname==="Custom"?["#c9933a","#b7742f","#8f8278","#c27a6a","#6a1f3a","#4e5866"].map(c=>`<i style="--c:${c}"></i>`):ents.slice(0,6).map(([k,t])=>`<i style="--c:${t.hex}"></i>`)).join("");
-    return `<details class="tgroup" name="tonegroups" data-group="${gname}"><summary><span>${gname}</span><span class="dots">${dots}</span><span class="gsel"></span></summary><div class="chips">${items}</div></details>`; }).join("");
-  picker.querySelector('details[data-group="Custom"]').appendChild($("blendPanel"));
-  picker.addEventListener("toggle",e=>{ const d=e.target; if(d.open){ picker.querySelectorAll("details[open]").forEach(o=>{ if(o!==d) o.open=false; }); if(d.dataset.group==="Custom" && tone.value!=="blend"){ tone.value="blend"; syncPicker(); compute(); } } },true);
-  picker.querySelector('details[data-group="Custom"] .chips').hidden=true;
-  picker.addEventListener("click",e=>{const b=e.target.closest(".chip"); if(!b) return; tone.value = tone.value===b.dataset.tone ? "" : b.dataset.tone; syncPicker(); compute(); const d=b.closest("details"); if(d&&tone.value!=="blend") d.open=false;});
+    const tiles=ents.map(([k,t])=>`<button type="button" class="tile${t.blend?" wheeltile":""}" role="radio" aria-checked="false" data-tone="${k}" style="--c:${t.hex};--hi:${shade(t.hex,.3)};--lo:${shade(t.hex,-.4)}" aria-label="${TONES[k].name}"><i></i><span>${TILE[k]||t.name}</span></button>`).join("");
+    return `<div class="item stack tfam" data-group="${gname}"><div class="itemhead"><span class="lbl">${gname}</span><span class="val gsel"></span></div><div class="tiles">${tiles}</div></div>`; }).join("");
+  picker.querySelector('.tfam[data-group="Custom"]').after($("blendPanel"));
+  picker.addEventListener("click",e=>{const b=e.target.closest(".tile"); if(!b) return; tone.value = tone.value===b.dataset.tone ? "" : b.dataset.tone; syncPicker(); compute();});
 }
 function syncPicker(){
-  document.querySelectorAll("#tonePicker .chip").forEach(b=>b.setAttribute("aria-checked", b.dataset.tone===tone.value ? "true":"false"));
-  const t=TONES[tone.value]; const sel=$("toneSelected"), sw=sel.querySelector(".sw");
-  document.querySelectorAll("#tonePicker details").forEach(d=>{ const mine=t&&t.group===d.dataset.group; d.querySelector(".gsel").textContent=mine?(SHORT[tone.value]||t.name).replace(/:.*$/,""):""; });
-  if(t){ sel.querySelector("span").textContent=(SHORT[tone.value]||t.name).replace(/:.*$/,""); sw.style.setProperty("--c",t.hex); sw.style.setProperty("--hi",shade(t.hex,.35)); sw.style.setProperty("--lo",shade(t.hex,-.45)); }
-  else { sel.querySelector("span").textContent="No tone selected"; sw.style.setProperty("--c","#3d3d3b"); sw.style.setProperty("--hi","#555"); sw.style.setProperty("--lo","#222"); }
+  document.querySelectorAll("#tonePicker .tile").forEach(b=>b.setAttribute("aria-checked", b.dataset.tone===tone.value ? "true":"false"));
+  const t=TONES[tone.value];
+  document.querySelectorAll("#tonePicker .tfam").forEach(d=>{ const mine=t&&t.group===d.dataset.group; d.querySelector(".gsel").textContent=mine?(SHORT[tone.value]||t.name).replace(/:.*$/,""):""; });
   $("blendPanel").hidden = tone.value!=="blend";
-  const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; $("toneSelected").hidden=isNone;
-  if(isNone) document.querySelectorAll("#tonePicker details[open]").forEach(d=>d.open=false); }
+  const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; }
 
 /* ---------- Colour wheel ---------- */
 const R=96, LT0=R+4, LT1=R+22, RIM0=R+25, RIM1=R+43, DK0=R+46, DK1=R+64, CX=180, CY=180, NEUTRAL="#a39d99";
