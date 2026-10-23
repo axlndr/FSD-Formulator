@@ -219,7 +219,7 @@ export function formulate(inp){
     rows.push([g(5*mult),base]);
     catalystBase=20*mult;
     shadeOut=`${cell}N + ${base}`;
-    why.push(`NRP at level ${d} is ${nrp.toLowerCase()}; ${base} neutralizes it. Mixing with bases: 5 g base + 15 g Natural Series shade.`);
+    why.push(`NRP at level ${d} is ${nrp.toLowerCase()}; ${base} neutralizes it. 5 g of ${base} replaces 5 g of the Natural Series shade: 15 g shade + 5 g base.`);
     notes.push("Add a Pure Tone at the shade's standard amount if you want a reflection on top of the neutralized result, and raise the Catalyst 1:2 on the total.");
     if(gy>0) notes.push("For grey coverage, use the Natural/Natural formula instead; controlling bases are not charted for coverage.");
     return done({dev:`${ml(catalystBase*2)} · ${vol}`});
@@ -309,7 +309,7 @@ export function formulate(inp){
   if(pig && rows.some(r=>r[1]===pig.name)){ why.push(pigF>=2 ? `Outer rim: ${pig.name} (Full Spectrum Permanent Pure Pigment, nearest to the tone's hue) replaces the Pure Tone at double the shade's standard amount, the deck's upper limit.` : `${pig.name} (Full Spectrum Permanent Pure Pigment, nearest to the tone's hue) added at ${Math.round(pigF*100)}% of the shade's standard amount${pigF>=0.5?", the deck's intensify guideline (half the amount)":""}.`); notes.push("Pure Pigments are concentrated single tones: strand test, keep Color Catalyst 1:2 on the total mixture, and don't oversaturate or the reflection goes flat. The Permanent guide does not recommend Pure Pigments at levels 8–10 except Pure Pink."); }
   if(recipeHasPig && rows.some(r=>r[1].startsWith("Pure "))){ why.push(`The blend includes a Full Spectrum Permanent Pure Pigment. Its strength sits between Deep Light and Dark Pure Tones, so its share is scaled ×${isLight?"⅔":"1⅓"} on ${isLight?"light":"dark"} shades to match the intended strength.`); notes.push("Pure Pigments follow the law of colour and are not intermixed with each other to make secondary colours; keep Color Catalyst 1:2 on the total."); }
   catalystBase = rows.reduce((a,r)=>a+parseFloat(r[0]),0);
-  if(plan==="base") notes.push(`Mixing with bases: 5 g ${base} + 15 g Natural Series; Pure Tone and Catalyst follow the shade. ${base} also lifts on its own alkalinity (about level 7).`);
+  if(plan==="base") notes.push(`The 5 g of ${base} takes the place of 5 g of the Natural Series shade, so the colour is still 20 g. The Pure Tone amount and the Catalyst are the same as for the shade on its own. ${base} has its own lifting power (about level 7), so it doesn't hold the lift back.`);
   if(plan==="none" && exposure!=="none" && temp!=="cool" && mode==="auto" && !t.none) notes.push(`If the result pulls too warm, swap to “Always neutralize with Pure Tones” to split in ${neutPT}, or add ${base}.`);
   if(exposure==="none" && mode==="auto") notes.push("Going darker or same-level: no NRP is lifted. If the hair was previously lightened, treat the existing warmth as exposed NRP and choose a neutralizing mode.");
   if(!lifting) notes.push("Going darker is deposit only; if the hair has been lightened before, replace warmth with a warm Pure Tone or the result can go cool and flat.");
