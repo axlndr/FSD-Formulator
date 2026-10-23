@@ -1,25 +1,19 @@
-/* Layout: Deep packaging palette: near-black ground, white type, one cobalt blue accent, thin rules, square edges. Phone: inputs in one column with the formula in a
-   sticky bar at the bottom that opens as a sheet. Laptop: inputs left, formula pinned right. */
+/* Palette from the Full Spectrum Deep relaunch: the deck's navy → cobalt → teal → green ground, white type, and the tube's
+   near-black with one cobalt accent for panels. Phone: inputs in one column with the formula in a sticky bar at the bottom
+   that opens as a sheet. Laptop: inputs left, formula pinned right. */
 :root{
-  --bg:#161616; --panel:#1f1f1e; --panel2:#262624; --fg:#ffffff; --muted:#b2b2b2; --line:#3d3d3b; --rule:#ffffff;
-  --accent:#005098; --accent-ink:#4a9ae6; --accent-fg:#ffffff; --warn:#f0c46b; --warn-bg:#33290f; --stop:#f0907a; --stop-bg:#3a1a12;
+  --g1:#041735; --g2:#1f5498; --g3:#2f7082; --g4:#3d8a5c;
+  --bg:#0e0e0e; --panel:rgba(14,14,14,.82); --panel2:rgba(34,34,34,.86); --fg:#ffffff; --muted:#c9d2d6; --line:rgba(255,255,255,.16); --rule:#ffffff;
+  --accent:#005098; --accent-ink:#6fb4ff; --accent-fg:#ffffff; --warn:#f0c46b; --warn-bg:#33290f; --stop:#f0907a; --stop-bg:#3a1a12;
   --display:"Aveda Sans",system-ui,sans-serif; --body:"Aveda Sans",system-ui,sans-serif; --mono:"Aveda Mono",ui-monospace,Menlo,monospace;
   color-scheme:dark;
 }
-@media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){
-    --bg:#ffffff;--panel:#f8f8f8;--panel2:#f0f0f0;--fg:#161616;--muted:#5f5f5f;--line:#dddddd;--rule:#161616;
-    --accent:#005098;--accent-ink:#005098;--accent-fg:#ffffff;--warn:#7a4f00;--warn-bg:#fbeccb;--stop:#8b2d1f;--stop-bg:#f8dcd5;color-scheme:light;
-  }
-}
-:root[data-theme="light"]{
-  --bg:#ffffff;--panel:#f8f8f8;--panel2:#f0f0f0;--fg:#161616;--muted:#5f5f5f;--line:#dddddd;--rule:#161616;
-  --accent:#005098;--accent-ink:#005098;--accent-fg:#ffffff;--warn:#7a4f00;--warn-bg:#fbeccb;--stop:#8b2d1f;--stop-bg:#f8dcd5;color-scheme:light;
-}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-weight:400;font-size:16px;line-height:1.5;
+body{background:var(--g2);color:var(--fg);min-height:100vh;font-family:var(--body);font-weight:400;font-size:16px;line-height:1.5;
   padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(168deg,var(--g1) 0%,var(--g2) 32%,var(--g3) 64%,var(--g4) 100%)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(60% 45% at 85% 10%,rgba(31,84,152,.55),transparent 70%),radial-gradient(55% 40% at 10% 95%,rgba(61,138,92,.5),transparent 70%)}
 .wrap{max-width:660px;margin:0 auto;display:grid;gap:26px}
 .cols{display:grid;gap:26px;align-items:start}
 header{display:grid;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--rule)}
@@ -37,10 +31,10 @@ fieldset{border:0;padding:0;margin:0;display:grid;gap:16px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .row>*{min-width:0}
 label{display:grid;align-content:start;gap:7px;font-family:var(--mono);font-weight:400;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-select{font-family:var(--body);font-size:1rem;letter-spacing:0;text-transform:none;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:0;padding:13px 12px;min-height:48px;width:100%}
+select{font-family:var(--body);font-size:1rem;letter-spacing:0;text-transform:none;color:var(--fg);background:var(--panel);background-color:#141414;border:1px solid var(--line);border-radius:0;padding:13px 12px;min-height:48px;width:100%}
 select:focus-visible,summary:focus-visible,button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
 .hint{font-family:var(--body);font-weight:300;color:var(--muted);font-size:.82rem;letter-spacing:0;text-transform:none}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:0;padding:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:0;padding:22px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .formula{display:grid;gap:16px}
 .shade{font-family:var(--display);font-weight:700;font-size:1.7rem;letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
 .sub{color:var(--muted);font-size:.92rem;font-weight:300}
@@ -157,9 +151,9 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 
 /* Result: sticky bar + sheet on phones, pinned column on wide screens */
 .bar{display:flex;align-items:center;gap:12px;width:100%;text-align:left;text-transform:none;letter-spacing:0;font-family:var(--body);font-size:1rem;
-  padding:12px 16px;min-height:64px;border:0;border-top:1px solid var(--line);background:var(--panel);color:var(--fg);
+  padding:12px 16px;min-height:64px;border:0;border-top:1px solid var(--line);background:#0e0e0e;color:var(--fg);
   background-image:linear-gradient(90deg,color-mix(in srgb,var(--tone,#005098) 22%,transparent),transparent 60%)}
-.bar:hover{background-color:var(--panel2);color:var(--fg)}
+.bar:hover{background-color:#1a1a1a;color:var(--fg)}
 .barswatch{flex:0 0 14px;width:14px;height:40px;background:linear-gradient(180deg,var(--from,#3d3d3b),var(--to,#005098))}
 .bartext{display:grid;gap:1px;min-width:0;flex:1}
 .bartext b{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -171,7 +165,7 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 @media (max-width:899px){
   body{padding-bottom:96px}
   .result{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;flex-direction:column;max-height:88vh;max-height:88dvh;
-    background:var(--bg);box-shadow:0 -8px 30px rgba(0,0,0,.35);padding-bottom:env(safe-area-inset-bottom,0px)}
+    background:#0e0e0e;box-shadow:0 -8px 30px rgba(0,0,0,.45);padding-bottom:env(safe-area-inset-bottom,0px)}
   .result .sheetbody{display:none;overflow:auto;padding:0 16px 20px;gap:18px;flex-direction:column}
   .result.open .sheetbody{display:flex}
   .result.open .bar{border-top:0}
