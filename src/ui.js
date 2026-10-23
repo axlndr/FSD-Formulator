@@ -28,15 +28,18 @@ function greySwatch(pct,baseHex){ const key=pct+baseHex; if(greyCache[key]) retu
   const dpr=Math.min(3,window.devicePixelRatio||1), W=Math.round(96*dpr), H=Math.round(80*dpr);
   const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
   const [h,s,l]=rgb2hsl(hexRGB(baseHex)); const rgbs=(hh,ss,ll)=>{const c=hsl2rgb(hh,ss,ll);return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;};
-  ctx.fillStyle=rgbs(h,s,Math.max(.04,l*.75)); ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=rgbs(h,s*.9,Math.max(.03,l*.7)); ctx.fillRect(0,0,W,H);
   let seed=pct*131+7; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
   ctx.lineCap="round";
-  for(let i=0;i<Math.round(W*2.2);i++){ const x=rnd()*W; const white=rnd()*100<pct*.85; const w=(0.45+rnd()*1.0)*dpr;
-    if(white){ const g=160+rnd()*90; ctx.strokeStyle=`rgba(${g|0},${(g-1)|0},${(g-4)|0},${.55+rnd()*.4})`; }
-    else { const dl=(rnd()-.5)*.22, ds=(rnd()-.5)*.1; ctx.strokeStyle=rgbs(h+(rnd()-.5)*6,Math.max(0,Math.min(1,s+ds)),Math.max(.02,Math.min(.95,l+dl))); ctx.globalAlpha=.85; }
-    ctx.lineWidth=w; ctx.beginPath(); const sway=(rnd()-.5)*4*dpr; ctx.moveTo(x,-2); ctx.bezierCurveTo(x+sway,H*.35,x-sway,H*.65,x+sway*.5,H+2); ctx.stroke(); ctx.globalAlpha=1; }
-  // soft sheen band + edge shading, like a hair sample under salon light
-  const g1=ctx.createLinearGradient(0,0,W,0); g1.addColorStop(0,"rgba(0,0,0,.28)"); g1.addColorStop(.2,"rgba(0,0,0,.04)"); g1.addColorStop(.42,"rgba(255,255,255,.26)"); g1.addColorStop(.55,"rgba(255,255,255,.06)"); g1.addColorStop(.8,"rgba(0,0,0,.05)"); g1.addColorStop(1,"rgba(0,0,0,.3)");
+  const strand=(x,white)=>{ const w=(0.4+rnd()*0.9)*dpr;
+    if(white){ const g=150+rnd()*100, cool=rnd()<.6; ctx.strokeStyle=`rgba(${(g-(cool?4:0))|0},${g|0},${(g+(cool?6:-4))|0},${.45+rnd()*.4})`; }
+    else { const dl=(rnd()-.5)*.3, ds=(rnd()-.5)*.12; ctx.strokeStyle=rgbs(h+(rnd()-.5)*8,Math.max(0,Math.min(1,s+ds)),Math.max(.02,Math.min(.95,l+dl))); ctx.globalAlpha=.8; }
+    ctx.lineWidth=w; ctx.beginPath(); const a=(rnd()-.5)*10*dpr, b=(rnd()-.5)*10*dpr, drift=(rnd()-.5)*14*dpr;
+    ctx.moveTo(x,-2); ctx.bezierCurveTo(x+a,H*.33,x+b,H*.66,x+drift,H+2); ctx.stroke(); ctx.globalAlpha=1; };
+  // grey strands sit on top and catch the light, so fewer are needed to read as the stated percentage
+  const frac=Math.pow(pct/100,1.6); const n=Math.round(W*2.4);
+  for(let i=0;i<n;i++) strand(rnd()*W, rnd()<frac);
+  const g1=ctx.createLinearGradient(0,0,W,0); g1.addColorStop(0,"rgba(0,0,0,.26)"); g1.addColorStop(.2,"rgba(0,0,0,.03)"); g1.addColorStop(.44,"rgba(255,255,255,.22)"); g1.addColorStop(.58,"rgba(255,255,255,.04)"); g1.addColorStop(.82,"rgba(0,0,0,.04)"); g1.addColorStop(1,"rgba(0,0,0,.28)");
   ctx.fillStyle=g1; ctx.fillRect(0,0,W,H);
   return greyCache[key]=cv.toDataURL("image/png"); }
 function drawGreyStrip(){ const base=levelHex(+nl.value||5);
