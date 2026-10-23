@@ -155,8 +155,8 @@ table.mix{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 table.mix td{padding:10px 0;box-shadow:inset 0 -1px 0 var(--hair);vertical-align:top;font-size:17px}
 table.mix td:first-child{white-space:nowrap;width:5.5em;text-align:right;padding-right:16px;font-weight:700}
 table.mix tr.add td{background:rgba(61,138,92,.14);box-shadow:inset 0 -1px 0 var(--hair)}
-table.mix tr.add td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm);color:#2f6b45}
-table.mix tr.add td:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0;color:#2f6b45}
+table.mix tr.add td:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm)}
+table.mix tr.add td:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0}
 table.mix tr.total td{box-shadow:none;color:var(--fg2);font-size:15px;font-weight:400}
 .specs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;font-variant-numeric:tabular-nums}
 .spec{display:grid;gap:3px;min-width:0;padding:10px 12px;border-radius:var(--r-md);background:var(--row);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
