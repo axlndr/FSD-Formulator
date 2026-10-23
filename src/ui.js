@@ -223,7 +223,7 @@ function compute(){
   if(r.status==="empty"){
     $("outKicker").textContent="Waiting for input"; $("outShade").textContent="—"; $("outSub").textContent=`Choose the ${r.missing.join(", ").replace(/, ([^,]*)$/," and $1")} to see a formula.`;
     $("outMix").innerHTML=""; $("outAlt").hidden=true; ["outDir","outDev","outTime","outNrp"].forEach(id=>$(id).textContent="—");
-    $("outNotes").innerHTML=""; $("outWhy").innerHTML=""; $("outTreat").hidden=true; $("outWarn").hidden=true; $("outStop").hidden=true;
+    $("outNotes").innerHTML=""; $("outCautions").innerHTML=""; $("outCautions").hidden=true; $("outTreat").hidden=true; $("outWarn").hidden=true; $("outStop").hidden=true;
     paint("#3d3d3b","#005098","#005098"); $("rvFrom").textContent=""; $("rvTo").textContent=""; drawChart();
     $("barShade").textContent="Choose levels and a tone"; $("barLine").textContent=$("outSub").textContent; $("share").hidden=true;
     if(tone.value==="blend"){ drawRing(true,r.k); blendReadout(true,r.k,r.blendList); }
@@ -238,8 +238,8 @@ function compute(){
 function paint(from,to,toneHex){ for(const id of ["stripe","sheet"]){ const el=$(id); el.style.setProperty("--from",from); el.style.setProperty("--to",to); el.style.setProperty("--tone",toneHex); } }
 function mixRows(rowsIn,dev,additive){
   const rows=rowsIn.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
-  if(rowsIn.length){ if(additive) rows.push(`<tr class="add"><td>${additive[0]}</td><td>${additive[1]}</td></tr>`);
-    const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
+  if(rowsIn.length){ const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
+    if(additive) rows.push(`<tr class="add"><td>${additive[0]}</td><td>${additive[1]}</td></tr>`);
     const tot=rowsIn.reduce((a,r)=>a+parseFloat(r[0]),0)+(additive?parseFloat(additive[0]):0)+parseFloat(d[0]); rows.push(`<tr class="total"><td>${Math.round(tot)} ml</td><td>total colour mixture</td></tr>`); }
   return rows.join("");
 }
@@ -251,10 +251,10 @@ function render(o){
   $("outDev").textContent=o.dev; $("outTime").textContent=o.time;
   $("barShade").textContent=o.shade; $("barLine").textContent=`${o.rows.map(r=>`${r[0]} ${r[1]}`).join(" + ")} · ${o.dev}`;
   $("share").hidden=!navigator.share;
-  $("outNotes").innerHTML=o.notes.map(x=>`<li>${x}</li>`).join("");
+  $("outNotes").innerHTML=(o.teach||[]).map(x=>`<li>${x}</li>`).join("");
+  $("outCautions").innerHTML=o.notes.map(x=>`<li>${x}</li>`).join(""); $("outCautions").hidden=!o.notes.length;
   if(o.treat){ $("outTreat").hidden=false; $("outTreatLevel").textContent=o.treat.level; $("outTreat").classList.toggle("req",o.treat.level.startsWith("highly")); $("outTreat").open = o.treat.level.startsWith("highly");
     $("outTreatLead").textContent=o.treat.lead; $("outTreatSteps").innerHTML=o.treat.steps.map(x=>`<li>${x}</li>`).join(""); } else $("outTreat").hidden=true;
-  $("outWhy").innerHTML=o.why.map(x=>`<li>${x}</li>`).join("");
   $("outWarn").hidden=!o.warn; $("outWarn").textContent=o.warn||"";
   $("outStop").hidden=!o.stop; $("outStop").textContent=o.stop||"";
   drawChart();

@@ -126,6 +126,7 @@ export function formulate(inp){
   const kBase = strengthScore<=-2?0.5:strengthScore>=2?1.5:1;
   const dAdj=d+tex; // pattern: formulate lighter
   const notes=[], why=[]; let warn="", stop="";
+  let plan="none", reason="", ptPlan=null, exposure="none", temp="";
   let cell;
   if(Number.isInteger(dAdj) && dAdj<=10){ cell=GRID[n][dAdj-1]; }
   else { const sh = dAdj>n ? 2*dAdj-n : dAdj+1; cell = sh>14 ? "X" : shadeFor(sh); }
@@ -182,7 +183,37 @@ export function formulate(inp){
   if((inp.porosity||"")==="low") notes.push("Low porosity resists colour: saturate thoroughly, allow the full processing time and strand test.");
   if((inp.porosity||"")==="high") notes.push("High porosity accepts colour faster and can grab cool tones: watch processing and strand test.");
   if((inp.porosity||"")==="compromised") notes.push("Highly compromised hair takes colour fast and unevenly: strand test and watch processing closely.");
+  /* Plain-English walkthrough for teaching: assembled from the decisions above once the formula is final */
+  const teach=(r)=>{
+    const L=[]; const lo=x=>x.toLowerCase(); const tName0=t.name.replace(/ \(.*\)/,"");
+    const liftN=d-n;
+    L.push(`<b>Start with the levels.</b> The guest is a natural level ${n} and wants to end at level ${d}: ${liftN>0?`a lift of ${liftN} level${liftN>1?"s":""}`:liftN===0?"the same level, so this is a deposit with no lift":`going ${-liftN} level${-liftN>1?"s":""} darker`}.`+
+      (tex>0?` The curl pattern (${tex===0.5?"2B–3B":"3C–4C"}) makes hair look ${tex===0.5?"about half a level":"about a level"} darker than it is, so we formulate ${tex===0.5?"half a level":"one level"} lighter and aim for ${dAdj}.`:""));
+    if(r.rows.length===0) return L;
+    const shadeTxt=shadeLabel+(split?" in equal parts":"");
+    if(lifting) L.push(`<b>Find the shade on the chart.</b> Going lighter, the Natural Series shade sits as far above the desired level as the desired level is above the natural: ${dAdj} + (${dAdj} − ${n}) = ${2*dAdj-n}${split?`, which lands between two shades, so ${shadeTxt}`:`, so ${shadeTxt}`}. That is why a level-${d} result is formulated with a ${shadeLabel} and not an 8N: the shade is a strength of lift and deposit, not the level you will see.`);
+    else L.push(`<b>Find the shade on the chart.</b> Going darker or staying level, Deep deposits at full strength, so you use the shade one level above the desired level: ${dAdj} → ${shadeTxt}.`);
+    if(DERIVED(n)) L.push(`The printed chart covers natural levels 1–6; natural ${n} uses the same rule, so expect the cool base to read a touch cooler on lighter hair.`);
+    L.push(`<b>Know what the hair will expose.</b> ${liftN>0?`Lifting to level ${d} uncovers the natural remaining pigment, which at level ${d} is ${lo(nrp)}.`:`At level ${d} the underlying pigment is ${lo(nrp)}.`} Its opposite on the colour wheel is ${lo(comp)}, so that is what neutralizes it if the result should not read warm.`);
+    if(t.vibrant) L.push(`<b>Build the red.</b> Vibrant reds are built on Red Base instead of a Natural Series shade${isLight?", with Bright Base to carry the lift at lighter levels (or 12N where Bright Base is not available)":""}; the Pure Tone adds the direction of the red.`);
+    else if(t.ctrl) L.push(`<b>Neutralize with a controlling base.</b> ${BASE_FOR_NRP(d)} is the opposite of ${lo(nrp)}, so 5 g of it replaces 5 g of the ${shadeLabel}: 15 g shade + 5 g base. The result is neutral at level ${d}; add a Pure Tone at the shade's standard amount if you want a reflection on top.`);
+    else if(t.baseOnly) L.push(`<b>Use the base alone.</b> ${t.baseOnly} neutralizes on its own and lifts to about level 7 on its own alkalinity, so it goes on ${isLight?"with 12N to reach a lighter level":"by itself"}.`);
+    else if(gy>0) L.push(`<b>Cover the grey.</b> Grey has no pigment to neutralize, so the Natural Series shade does the covering and N/N is the coverage tone${t.none?" at the shade's full Pure Tone amount":`, split half-and-half with ${ptName||"the reflection"} so the reflection still shows`}. ${cov==="max"?"Maximum coverage mixes the Catalyst 1:2 on the Natural Series only, which keeps the mixture strongest.":"Natural coverage mixes the Catalyst 1:2 on all the colour components."}`);
+    else {
+      const what = plan==="base" ? `${BASE_FOR_NRP(d)} replaces 5 g of the ${shadeLabel} and cancels the ${lo(nrp)} before the reflection goes on, so the ${lo(tName0)} reads clean rather than muddy.`
+        : plan==="split" ? `half of the shade's Pure Tone amount goes to ${neutPT} to cancel the ${lo(nrp)}, and half to ${ptName} for the reflection.`
+        : plan==="neut" ? `${neutPT} at the shade's standard amount cancels the ${lo(nrp)} for a neutral result.`
+        : t.bare ? `no reflective tone was chosen, so the ${shadeLabel} goes on alone and its cool-brown base handles the ${lo(nrp)} for a natural result.`
+        : temp==="warm" ? `${tName0} is a warm tone, so the ${lo(nrp)} helps rather than hurts: nothing is neutralized and ${ptName||"the Pure Tone"} is added for the reflection.`
+        : `the reflection itself leans against the ${lo(nrp)}, so ${ptName||"the Pure Tone"} goes on without a separate neutralizer.`;
+      L.push(`<b>Decide what to do about it.</b> The result should be ${lo(tName0)}${temp?` (a ${temp} tone)`:""}${exposure!=="none"?`, and ${liftN} level${liftN>1?"s":""} of lift exposes the ${lo(nrp)} ${exposure==="strong"?"strongly":"moderately"}`:""}: ${what}`);
+    }
+    if(ptStd>0 && !t.bare && !t.baseOnly) L.push(`<b>Measure the Pure Tone.</b> Every shade has a standard Pure Tone amount per 20 g — ${shadeLabel} takes ${g(ptStd)}; the lighter the shade, the less it needs. ${isLight?"Light":"Dark"} Pure Tones belong with ${isLight?"8N–14N":"4N–7N"}.${k!==1?` The variables${bumps.length?" and the lift":""} make this a ${k>1?"strong formula, so the Pure Tone is 50% more":"soft formula, so the Pure Tone is 50% less"}.`:""}${pigF>0?" A Pure Pigment is added for intensity; in Deep it sits between a Light and a Dark Pure Tone in strength.":""}`);
+    L.push(`<b>Choose the developer and time.</b> ${lifting?"Going lighter uses 20 Volume Color Catalyst for 30 minutes":"Going darker or staying level uses 5 or 10 Volume for 20 minutes"}${dev.requested!==dev.v?`; the variables asked for ${devLabel(dev.requested)}, but ${dev.capped?"20 Volume is the maximum on the scalp":"the ladder is capped here"}`:dev.v!==(lifting?20:10)?`; the variables moved it to ${devLabel(dev.v)}`:""}. Mix it 1:2 on the colour: ${r.dev}.`);
+    L.push(`<b>Protect the hair.</b> The Strengthening Additive in the formula (8 g per 40 g of colour) builds bonds while the colour processes; the primer and activator around it complete the Botanical Repair™ treatment.`);
+    return L; };
   const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o}; r.treat=treatmentPlan(inp, r.rows, mult); r.additive=additiveFor(r.rows); if(r.alt) r.alt.additive=additiveFor(r.alt.rows);
+    r.teach=teach(r);
     r.result=predictHex({n, d, nrp, rows:r.rows}); if(r.alt) r.alt.result=predictHex({n, d, nrp, rows:r.alt.rows}); return r; };
 
   /* --- Vibrant Red series (Red Base) --- */
@@ -262,15 +293,15 @@ export function formulate(inp){
   }
 
   /* ---- NRP handling ---- */
-  const lift=d-n, exposure = lift>=3 ? "strong" : lift>=1 ? "moderate" : "none";
-  const temp = t.blend ? blendTemp(blend,isLight) : TEMP(inp.tone);
+  const lift=d-n; exposure = lift>=3 ? "strong" : lift>=1 ? "moderate" : "none";
+  temp = t.blend ? blendTemp(blend,isLight) : TEMP(inp.tone);
   const covers = temp==="cool" && (t.blend ? bl.some(x=>(COUNTERS[x[2]]?.[isLight?"light":"dark"]||[]).includes(nrp)) : (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp));
   if(recipeK) why.push(`${PRESETS[blend.preset].name} is defined as a ${kLabel(recipeK)} formula (${Math.round(recipeK*100)}% of the shade's Pure Tone amount); softening the Pure Tone is what makes the shade. Hair-variable bumps are not applied.`);
   if(t.blend && blend.preset && PRESETS[blend.preset].levels && !PRESETS[blend.preset].levels.includes(d)) warn = warn || `${PRESETS[blend.preset].name} reads best at level${PRESETS[blend.preset].levels.length>1?"s":""} ${PRESETS[blend.preset].levels.join("–")}; at level ${d} expect a different balance of warmth and depth.`;
   if(t.blend) why.push(`Blend: ${blend.preset?`${PRESETS[blend.preset].name} (recipe: ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(", ")}, ${PRESETS[blend.preset].nrp==="enhance"?"enhances":"neutralizes"} the NRP)`:`custom, ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(" + ")} from the wheel position`}${blend.k!=null?`; distance from the centre sets the Pure Tone at ${Math.round(k*100)}% of the shade's amount${pigF>0&&pigF<2?` with Pure Pigment at ${Math.round(pigF*100)}%`:pigF>=2?" and the rim swaps in Pure Pigment at 200%":""}`:""}.`);
   const neutPT = NEUT_PT[nrp][isLight?"light":"dark"];
   const base=BASE_FOR_NRP(d);
-  let plan="none", reason="", ptPlan=null; // plan: "none" | "base" | "split" (neutralizer + reflection) | "neut" (neutralizer alone)
+  // plan: "none" | "base" | "split" (neutralizer + reflection) | "neut" (neutralizer alone)
   if(t.bare){ plan="none"; reason=`No reflective tone chosen: the ${shadeLabel} Natural Series shade goes on alone. Its cool-brown base neutralizes the ${nrp.toLowerCase()} NRP for a natural result, as the deck describes.`; }
   else if(exposure==="none" || mode==="chart" || mode==="enhance"){
     plan="none";
