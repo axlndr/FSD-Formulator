@@ -60,8 +60,13 @@ function patternPath(code){ // one strand, 40 wide × 64 tall, drawn from the to
 function vtile(id,val,label,svg,checked){ return `<button type="button" class="vt" role="radio" aria-checked="${checked}" data-v="${val}" ${id?`data-code="${id}"`:""} aria-label="${label}"><svg viewBox="0 0 40 64" aria-hidden="true">${svg}</svg><span>${id||label}</span></button>`; }
 function drawVariables(){
   $("patStrip").innerHTML=PATTERNS.map(([c,v,l])=>vtile(c,v,`${c} · ${l}`,`<path d="${patternPath(c)}" fill="none" stroke="currentColor" stroke-width="${c[0]==="4"?1.7:c[1]==="A"?1.6:c[1]==="B"?2.1:2.6}" stroke-linecap="round" stroke-linejoin="round"/>`,patternCode===c)).join("");
-  const tex=[["-1","Fine",1.2],["0","Medium",2.4],["1","Coarse",4]];
-  $("texStrip").innerHTML=tex.map(([v,l,w])=>vtile("",v,l,`<path d="M20,4 C22,24 18,44 20,60" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round"/>`,$("htype").value===v)).join("");
+  // texture: a magnified strand with its cuticle; diameter and scale size grow fine → coarse
+  const strandSVG=(w,scale,lift)=>{ const x0=20-w/2, x1=20+w/2; let out=`<defs><linearGradient id="sg${w}" x1="0" x2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".55"/><stop offset=".38" stop-color="currentColor" stop-opacity=".12"/><stop offset=".7" stop-color="currentColor" stop-opacity=".5"/><stop offset="1" stop-color="currentColor" stop-opacity=".8"/></linearGradient></defs>`;
+    out+=`<rect x="${x0}" y="2" width="${w}" height="60" rx="${w/2}" fill="url(#sg${w})"/>`;
+    for(let y=6;y<60;y+=scale){ const b=lift; out+=`<path d="M${x0},${y} q${w*.25},${b} ${w*.5},0 t${w*.5},0" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="${.7+lift*.25}" stroke-linecap="round"/>`; }
+    return out; };
+  const tex=[["-1","Fine",[9,4.5,1.2]],["0","Medium",[15,6,1.8]],["1","Coarse",[22,7.5,2.6]]];
+  $("texStrip").innerHTML=tex.map(([v,l,a])=>vtile("",v,l,strandSVG(...a),$("htype").value===v)).join("");
   const den=[["-1","Thin",4],["0","Medium",8],["1","Thick",14]];
   $("denStrip").innerHTML=den.map(([v,l,n])=>{ let p=""; for(let i=0;i<n;i++){ const x=6+(28*(i+0.5)/n); p+=`<path d="M${x},4 C${x+1.5},24 ${x-1.5},44 ${x},60" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`; } return vtile("",v,l,p,$("density").value===v); }).join("");
   const pv=$("patVal"); const pat=PATTERNS.find(x=>x[0]===patternCode); pv.textContent=pat?`${pat[0]} · ${pat[2]}`:"Select"; pv.classList.toggle("empty",!pat);
