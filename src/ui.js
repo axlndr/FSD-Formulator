@@ -23,25 +23,30 @@ for(const [sel,strip] of [[nl,"nlStrip"],[dl,"dlStrip"]]){
 /* Grey strip: swatches of the natural level shot through with white strands at each percentage */
 const GREYS=[[0,"None"],[25,"25% or less"],[50,"About 50%"],[75,"About 75%"],[90,"90% or more"]];
 // Drawn hair swatches: fine strands in the natural level's colour, silver-white strands mixed in at the chosen percentage.
-const greyCache={};
-function greySwatch(pct,baseHex){ const key=pct+baseHex; if(greyCache[key]) return greyCache[key];
-  const dpr=Math.min(3,window.devicePixelRatio||1), W=Math.round(96*dpr), H=Math.round(80*dpr);
+const swatchCache={};
+/* Drawn hair swatch: fine strands whose colour runs from `fromHex` at the left to `toHex` at the right (same colour for a plain
+   swatch), with natural strand-to-strand variation, grey strands mixed in at `pct`, and a sheen band like a sample under salon light. */
+function hairSwatch({from,to,pct=0,w=96,h=80,sheen=true}){ const key=[from,to,pct,w,h,sheen].join("|"); if(swatchCache[key]) return swatchCache[key];
+  const dpr=Math.min(3,window.devicePixelRatio||1), W=Math.round(w*dpr), H=Math.round(h*dpr);
   const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d");
-  const [h,s,l]=rgb2hsl(hexRGB(baseHex)); const rgbs=(hh,ss,ll)=>{const c=hsl2rgb(hh,ss,ll);return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;};
-  ctx.fillStyle=rgbs(h,s*.9,Math.max(.03,l*.7)); ctx.fillRect(0,0,W,H);
-  let seed=pct*131+7; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
-  ctx.lineCap="round";
-  const strand=(x,white)=>{ const w=(0.4+rnd()*0.9)*dpr;
-    if(white){ const g=150+rnd()*100, cool=rnd()<.6; ctx.strokeStyle=`rgba(${(g-(cool?4:0))|0},${g|0},${(g+(cool?6:-4))|0},${.45+rnd()*.4})`; }
-    else { const dl=(rnd()-.5)*.3, ds=(rnd()-.5)*.12; ctx.strokeStyle=rgbs(h+(rnd()-.5)*8,Math.max(0,Math.min(1,s+ds)),Math.max(.02,Math.min(.95,l+dl))); ctx.globalAlpha=.8; }
-    ctx.lineWidth=w; ctx.beginPath(); const a=(rnd()-.5)*10*dpr, b=(rnd()-.5)*10*dpr, drift=(rnd()-.5)*14*dpr;
-    ctx.moveTo(x,-2); ctx.bezierCurveTo(x+a,H*.33,x+b,H*.66,x+drift,H+2); ctx.stroke(); ctx.globalAlpha=1; };
-  // grey strands sit on top and catch the light, so fewer are needed to read as the stated percentage
-  const frac=Math.pow(pct/100,1.6); const n=Math.round(W*2.4);
-  for(let i=0;i<n;i++) strand(rnd()*W, rnd()<frac);
-  const g1=ctx.createLinearGradient(0,0,W,0); g1.addColorStop(0,"rgba(0,0,0,.26)"); g1.addColorStop(.2,"rgba(0,0,0,.03)"); g1.addColorStop(.44,"rgba(255,255,255,.22)"); g1.addColorStop(.58,"rgba(255,255,255,.04)"); g1.addColorStop(.82,"rgba(0,0,0,.04)"); g1.addColorStop(1,"rgba(0,0,0,.28)");
-  ctx.fillStyle=g1; ctx.fillRect(0,0,W,H);
-  return greyCache[key]=cv.toDataURL("image/png"); }
+  const A=rgb2hsl(hexRGB(from)), B=rgb2hsl(hexRGB(to||from));
+  const rgbs=(hh,ss,ll)=>{const c=hsl2rgb(((hh%360)+360)%360,Math.max(0,Math.min(1,ss)),Math.max(0,Math.min(1,ll)));return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;};
+  const at=(f)=>{ let dh=B[0]-A[0]; if(dh>180) dh-=360; if(dh<-180) dh+=360; return [A[0]+dh*f, A[1]+(B[1]-A[1])*f, A[2]+(B[2]-A[2])*f]; };
+  // ground: slightly darker than the hair so gaps between strands read as depth
+  const g0=ctx.createLinearGradient(0,0,W,0); for(let i=0;i<=4;i++){ const [hh,ss,ll]=at(i/4); g0.addColorStop(i/4,rgbs(hh,ss*.9,Math.max(.03,ll*.7))); }
+  ctx.fillStyle=g0; ctx.fillRect(0,0,W,H);
+  let seed=pct*131+7+W; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
+  ctx.lineCap="round"; const frac=Math.pow(pct/100,1.6); const n=Math.round(W*2.4);
+  for(let i=0;i<n;i++){ const x=rnd()*W; const white=rnd()<frac; const wdt=(0.4+rnd()*0.9)*dpr; const [hh,ss,ll]=at(x/W);
+    if(white){ const gv=150+rnd()*100, cool=rnd()<.6; ctx.strokeStyle=`rgba(${(gv-(cool?4:0))|0},${gv|0},${(gv+(cool?6:-4))|0},${.45+rnd()*.4})`; }
+    else { ctx.strokeStyle=rgbs(hh+(rnd()-.5)*8, ss+(rnd()-.5)*.12, ll+(rnd()-.5)*.3); ctx.globalAlpha=.8; }
+    ctx.lineWidth=wdt; ctx.beginPath(); const a=(rnd()-.5)*10*dpr, b=(rnd()-.5)*10*dpr, drift=(rnd()-.5)*14*dpr;
+    ctx.moveTo(x,-2); ctx.bezierCurveTo(x+a,H*.33,x+b,H*.66,x+drift,H+2); ctx.stroke(); ctx.globalAlpha=1; }
+  if(sheen){ const g1=ctx.createLinearGradient(0,0,W,0); g1.addColorStop(0,"rgba(0,0,0,.26)"); g1.addColorStop(.2,"rgba(0,0,0,.03)"); g1.addColorStop(.44,"rgba(255,255,255,.22)"); g1.addColorStop(.58,"rgba(255,255,255,.04)"); g1.addColorStop(.82,"rgba(0,0,0,.04)"); g1.addColorStop(1,"rgba(0,0,0,.28)");
+    ctx.fillStyle=g1; ctx.fillRect(0,0,W,H); }
+  else { const g1=ctx.createLinearGradient(0,0,0,H); g1.addColorStop(0,"rgba(255,255,255,.14)"); g1.addColorStop(.45,"rgba(255,255,255,.02)"); g1.addColorStop(1,"rgba(0,0,0,.18)"); ctx.fillStyle=g1; ctx.fillRect(0,0,W,H); }
+  return swatchCache[key]=cv.toDataURL("image/png"); }
+const greySwatch=(pct,baseHex)=>hairSwatch({from:baseHex,to:baseHex,pct});
 function drawGreyStrip(){ const base=levelHex(+nl.value||5);
   $("greyStrip").innerHTML=GREYS.map(([p,label])=>`<button type="button" class="lv gv" role="radio" aria-checked="${String(grey.value)===String(p)}" data-l="${p}" aria-label="Grey: ${label}" style="background-image:url(${greySwatch(p,base)})"><span>${p===0?"0":p===25?"≤25":p===90?"≥90":p}<i>%</i></span></button>`).join(""); }
 $("greyStrip").addEventListener("click",e=>{ const b=e.target.closest(".lv"); if(!b) return; grey.value = grey.value===b.dataset.l ? "0" : b.dataset.l; grey.dispatchEvent(new Event("change",{bubbles:true})); });
@@ -235,7 +240,9 @@ function compute(){
   if(tone.value==="blend" && r.blendList){ drawRing(r.isLight,r.k); blendReadout(r.isLight,r.k,r.blendList); }
   render(r);
 }
-function paint(from,to,toneHex){ for(const id of ["stripe","sheet"]){ const el=$(id); el.style.setProperty("--from",from); el.style.setProperty("--to",to); el.style.setProperty("--tone",toneHex); } }
+function paint(from,to,toneHex){ for(const id of ["stripe","sheet"]){ const el=$(id); el.style.setProperty("--from",from); el.style.setProperty("--to",to); el.style.setProperty("--tone",toneHex); }
+  $("barSwatch").style.backgroundImage=`url(${hairSwatch({from:to,to,w:88,h:88})})`;
+  $("stripe").style.backgroundImage=`url(${hairSwatch({from,to,w:360,h:44,sheen:false})})`; }
 function mixRows(rowsIn,dev,additive){
   const rows=rowsIn.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
   if(rowsIn.length){ const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);

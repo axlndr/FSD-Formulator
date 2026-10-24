@@ -148,7 +148,7 @@ fieldset{border:0;padding:0;margin:0;display:grid;gap:22px;min-width:0}
 .eyebrow{font-size:13px;color:var(--ink);font-weight:700}
 .shade{font-size:30px;font-weight:700;letter-spacing:-.015em;line-height:1.15}
 .sub{color:var(--fg2);font-size:15px}
-.result-visual{position:relative;height:44px;border-radius:var(--r-md);overflow:hidden;background:repeating-linear-gradient(90deg,rgba(255,255,255,.08) 0 1px,rgba(0,0,0,.06) 1px 2px,transparent 2px 4px),linear-gradient(90deg,var(--from) 0%,var(--from) 16%,var(--to) 72%,var(--to) 100%);display:flex;justify-content:space-between;align-items:flex-end;padding:0 10px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.result-visual{position:relative;height:44px;border-radius:var(--r-md);overflow:hidden;background:linear-gradient(90deg,var(--from) 0%,var(--from) 16%,var(--to) 72%,var(--to) 100%) center/cover no-repeat;display:flex;justify-content:space-between;align-items:flex-end;padding:0 10px 6px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
 .result-visual::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--tone)}
 .result-visual span{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);opacity:.92}
 table.mix{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
@@ -216,10 +216,7 @@ table.grid td.hit{box-shadow:inset 0 0 0 2px var(--ink);color:var(--ink);font-we
 .bar{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font-size:17px;padding:10px 14px 10px 10px;min-height:64px;color:var(--fg);border-radius:var(--r-lg);
   background:var(--mat);backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass);box-shadow:var(--rim),0 10px 30px rgba(4,23,53,.3);
   background-image:linear-gradient(90deg,color-mix(in srgb,var(--tone,#005098) 18%,transparent),transparent 65%),var(--sheen)}
-.hairsw{background:
-  linear-gradient(90deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.06) 20%,rgba(255,255,255,.4) 40%,rgba(255,255,255,.12) 52%,rgba(0,0,0,.06) 72%,rgba(0,0,0,.32) 100%),
-  repeating-linear-gradient(90deg,rgba(255,255,255,.1) 0 1px,rgba(0,0,0,.07) 1px 2px,transparent 2px 4px),
-  var(--to,#005098);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.hairsw{background:var(--to,#005098) center/cover no-repeat;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
 .barswatch{flex:0 0 44px;width:44px;height:44px;border-radius:var(--r-md)}
 .bartext{display:grid;gap:1px;min-width:0;flex:1}
 .bartext b{font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
