@@ -101,7 +101,7 @@ export function treatmentPlan(inp, rows, mult){
   const steps=[];
   const primerWhy = por==="compromised" ? "required: equalizes porosity so compromised hair takes color evenly" : por==="high" ? "required: equalizes porosity for even deposit" : por==="low" ? "optional on low porosity; it conditions and primes" : "equalizes porosity for even deposit";
   steps.push(`Spray 5 ml Botanical Repair™ Professional Equalizing Primer on dry hair and comb through (${primerWhy}). Blow-dry in if desired.`);
-  steps.push(`Mix the ${additive} g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the ${Math.round(colourG)} g of base color (8 g per 40 g of base; Pure Tones are not counted).`);
+  steps.push(`Mix the ${additive} g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the ${Math.round(colourG)} g of base color (8 g per 40 g).`);
   steps.push("Apply and process as formulated, at room temperature. No heat.");
   steps.push("Rinse and shampoo with Botanical Repair™ Strengthening Shampoo.");
   steps.push(`Apply 20 g Botanical Repair™ Professional Bond Activator: ${activator}${activator==="Light / Rich"?" (Light for fine-to-medium hair, Rich for medium-to-thick)":""}. Process 10 minutes and rinse.`);
@@ -330,7 +330,7 @@ export function formulate(inp){
     const rule = gy>0 ? "Grey coverage processes with 20 Volume for up to 30 minutes" : t.vibrant||t.baseOnly ? "Red Base and the controlling bases lift on 20 Volume for 30 minutes" : lifting ? "Going lighter: 20 Volume, 30 minutes" : "Going darker: 5 or 10 Volume, 20 minutes";
     const moved = dev.v!==(lifting?20:10) && !(gy>0) && !t.vibrant && !t.baseOnly ? `; the variables moved it to ${devLabel(dev.v)}` : dev.capped ? `; the variables asked for more, but 20 Volume is the maximum on the scalp` : "";
     L.push(`<b>Color Catalyst.</b> ${rule}${moved}. Mixed 1:2 with the color: ${devTxt}${timeTxt&&!/^—/.test(timeTxt)?`, ${lo(timeTxt)}`:""}.`);
-    L.push(`<b>Botanical Repair™.</b> ${r.additive?r.additive[0]+" ":""}Professional Hair Strengthening Additive goes into every color formula: 8 g per 40 g of base color, measured against the Natural Series shade and any base, not the Pure Tone.`);
+    L.push(`<b>Botanical Repair™.</b> ${r.additive?r.additive[0]+" ":""}Professional Hair Strengthening Additive goes into every color formula (8 g per 40 g of base color).`);
     return L; };
   const tidy=(ar)=>{ const out=[]; for(const [gs,name] of ar){ const v=parseFloat(gs); if(!(v>0)) continue; const i=out.findIndex(x=>x[1]===name); if(i>=0) out[i]=[g(parseFloat(out[i][0])+v),name]; else out.push([gs,name]); } return out; };
   const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o}; r.rows=tidy(r.rows); if(r.alt){ r.alt.rows=tidy(r.alt.rows); if(!r.alt.kicker) r.alt.kicker="Alternative · Pure Tone route"; } r.treat=treatmentPlan(inp, r.rows, mult); r.additive=additiveFor(r.rows); if(r.alt) r.alt.additive=additiveFor(r.alt.rows);

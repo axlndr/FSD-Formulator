@@ -231,7 +231,7 @@ test("Botanical Repair color treatment plan follows the Reference Guide", () => 
   const r=formulate({...base,porosity:"high",htype:"-1"});
   assert.equal(r.treat.level,"highly recommended"); assert.deepEqual(r.additive,["4 g","Botanical Repair™ Professional Hair Strengthening Additive"]); // 20 g 10N + base only; the 3 g Light O/Y is not counted
   assert.match(r.treat.steps[0],/5 ml Botanical Repair™ Professional Equalizing Primer/);
-  assert.match(r.treat.steps[1],/4 g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the 20 g of base color \(8 g per 40 g of base; Pure Tones are not counted\)/);
+  assert.match(r.treat.steps[1],/4 g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the 20 g of base color \(8 g per 40 g\)/);
   assert.match(r.treat.steps[4],/Bond Activator: Light\. Process 10 minutes/);
   const m=formulate({...base,porosity:"medium",htype:"1"});
   assert.equal(m.treat.level,"recommended"); assert.match(m.treat.steps[4],/Bond Activator: Rich/);
