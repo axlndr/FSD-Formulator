@@ -243,7 +243,7 @@ export function formulate(inp){
       if(t.bare){ intent=`No tone was chosen, so the shade goes on alone and the ${lo(nrp)} is left as it is.`; chosen=`To neutralize it, the alternative replaces 5 g of the shade with ${baseN}.`; }
       else if(plan==="base"){
         intent = temp==="neutral" ? `A neutral result means the ${lo(nrp)} has to be neutralized.` : temp==="cool" ? `A ${lo(tName0)} result is cool, so the ${lo(nrp)} has to be neutralized before the cool reflection can be visible.` : `${tName0} over ${lo(nrp)} would read too orange, so the NRP is refined (partly neutralized) first.`;
-        chosen = `${baseLabel} 5 g of the shade. ${baseSentence}`; }
+        chosen = `${baseLabel} 5 g of the shade. ${baseSentence}${temp==="cool"&&pair&&inRows.length===1?` ${baseN} is the dominant of the two bases for this NRP (${baseN==="Green Base"?"green is dominant over blue":"blue is dominant over violet"}), so for the ashiest ${lo(tName0)} it is used on its own rather than as a pair.`:temp==="cool"&&inRows.length>1?` A softer cool result like ${lo(tName0)} takes the pair so neither side of the NRP shows.`:""}`; }
       else if(plan==="split"){ intent=`A ${lo(tName0)} result is cool, so the ${lo(nrp)} is neutralized and the reflection added on top.`; chosen=`Half of the Pure Tone amount goes to ${neutPT} — ${th.pt} — and half to ${ptName} for the reflection.`; }
       else if(plan==="neut"){ intent=`A neutral result means the ${lo(nrp)} has to be fully neutralized.`; chosen=`${neutPT} does it: ${th.pt}.`; }
       else if(temp==="warm"){ intent=`${tName0} is a warm result in the same family as the ${lo(nrp)}, so the NRP is enhanced rather than fought.`; chosen=`Nothing is neutralized; the Pure Tone builds on the warmth the hair already has.`; }
@@ -395,12 +395,14 @@ export function formulate(inp){
   else if(mode==="pair"){ plan="base"; usePair=!!pair; reason=`Forced: ${baseText()} + 15 g Natural Series to neutralize ${nrp.toLowerCase()}.`; }
   else if(mode==="pt"){ plan = t.none ? "neut" : covers ? "none" : "split"; reason=`Forced: neutralize ${nrp.toLowerCase()} with Pure Tone${plan==="none"?` (the ${tName} reflection already counters it)`:""}.`; }
   else { // auto
+    // Which cool tones take the pair of bases at a two-part NRP, and which take the single, stronger base for the ashiest result
+    const PAIR_TONES=["natural","beigeash","grey","violetash","matte"]; // the rest (blue ash, grey ash, violet, intense matte, blends) take the single base
     if(temp==="neutral"){
       plan="base"; ptPlan="neut"; usePair=!!pair;
       reason = exposure==="strong" ? `Neutral result: ${lift} levels of lift exposes ${nrp.toLowerCase()} strongly, so ${base} replaces 5 g of the shade to neutralize it.`
              : `Neutral result: ${lift} level${lift>1?"s":""} of lift exposes ${nrp.toLowerCase()}; ${base} replaces 5 g of the shade to neutralize it (Pure Tone route shown as the alternative).`;
     } else if(temp==="cool"){
-      plan="base"; ptPlan = covers ? "none" : "split";
+      plan="base"; ptPlan = covers ? "none" : "split"; usePair = !!pair && PAIR_TONES.includes(inp.tone);
       reason = exposure==="strong" ? `${lift} levels of lift exposes ${nrp.toLowerCase()} strongly: ${base} neutralizes it, and ${ptName} at the shade's standard amount creates the ${tName.toLowerCase()} reflection${covers?" (the tone also leans against the NRP, so expect a clean, cool result)":""}.`
              : `${lift} level${lift>1?"s":""} of lift exposes ${nrp.toLowerCase()}: ${base} neutralizes it, and ${ptName} at the shade's standard amount creates the ${tName.toLowerCase()} reflection${covers?" (the tone also leans against the NRP)":""}. Pure Tone route shown as the alternative.`;
     } else { // warm

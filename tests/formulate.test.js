@@ -83,8 +83,8 @@ test("a cool reflection at strong lift gets the base plus the reflection at stan
   assert.deepEqual(rows(r), ["15 g 14N", "5 g Violet Base", "2 g Light V/Gr"]);
 });
 test("a cool reflection that doesn't counter the NRP at moderate lift: base primary, split Pure Tones as alternative", () => {
-  const r = run({ nl:"4", dl:"6", tone:"beigeash" });
-  assert.deepEqual(rows(r), ["15 g 8N", "5 g Green Base", "8 g Light V/Gr"]);
+  const r = run({ nl:"4", dl:"6", tone:"beigeash" }); // a softer cool tone at a two-part NRP takes the pair
+  assert.deepEqual(rows(r), ["15 g 8N", "2.5 g Green Base", "2.5 g Blue Base", "8 g Light V/Gr"]);
   assert.deepEqual(rows(r.alt), ["20 g 8N", "4 g Light B/Gr", "4 g Light V/Gr"]);
 });
 test("warm reflections enhance the NRP (no base), except gold over red at strong lift", () => {
@@ -262,8 +262,12 @@ test("two-part NRPs: a neutral result uses a pair of bases, 2.5 g each; Advanced
   assert.deepEqual(r8.rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Blue Base"],["2.5 g","Violet Base"]]);
   const r6=formulate({...base,nl:"3",dl:"6",tone:"natural"});
   assert.deepEqual(r6.rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Green Base"],["2.5 g","Blue Base"]]);
-  const cool=formulate({...base,nl:"5",dl:"8",tone:"blueash"}); // cool result keeps the single base
+  const cool=formulate({...base,nl:"5",dl:"8",tone:"blueash"}); // the ashiest tones take the single, stronger base
   assert.deepEqual(cool.rows.filter(x=>/Base$/.test(x[1])),[["5 g","Blue Base"]]);
+  for(const tone of ["greyash","violet","imatte"]) assert.deepEqual(formulate({...base,nl:"5",dl:"8",tone}).rows.filter(x=>/Base$/.test(x[1])),[["5 g","Blue Base"]],tone);
+  for(const tone of ["beigeash","grey","violetash","matte"]) assert.deepEqual(formulate({...base,nl:"5",dl:"8",tone}).rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Blue Base"],["2.5 g","Violet Base"]],tone);
+  assert.deepEqual(formulate({...base,nl:"3",dl:"6",tone:"imatte"}).rows.filter(x=>/Base$/.test(x[1])),[["5 g","Green Base"]]);
+  assert.deepEqual(formulate({...base,nl:"3",dl:"6",tone:"matte"}).rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Green Base"],["2.5 g","Blue Base"]]);
   const forced=formulate({...base,nl:"5",dl:"8",tone:"blueash",nrpMode:"pair"});
   assert.deepEqual(forced.rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Blue Base"],["2.5 g","Violet Base"]]);
   const r7=formulate({...base,nl:"5",dl:"7",tone:"natural"}); // orange has one complement
