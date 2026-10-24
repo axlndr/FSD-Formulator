@@ -67,9 +67,9 @@ function componentHex(name){
    What each NRP needs and what each Deep component does, in plain words. Used to explain the formula, not to choose it. */
 const NRP_THEORY={
   "Red":          {opts:"Green Base is red's complement and cancels it cleanly.", pt:"green is red's complement"},
-  "Red/orange":   {opts:"Green Base cancels the red side and Blue Base the orange side; Green alone leaves a touch of orange, Blue alone a touch of red, and a combination of the two covers both.", pt:"blue cancels the orange and green or grey cancels the red"},
+  "Red/orange":   {opts:"Green Base cancels the red side of it; expect a touch of orange to remain, which the Natural Series shade and Pure Tone finish.", pt:"blue cancels the orange and green or grey cancels the red"},
   "Orange":       {opts:"Blue Base is orange's complement and gives a clean, cooler result.", pt:"blue is orange's complement"},
-  "Yellow/orange":{opts:"Blue Base cancels the orange side and lends a cooler result; Violet Base cancels the yellow side and leaves a little warmth for a softer beige; a combination of Blue and Violet covers both.", pt:"blue cancels the orange and violet cancels the yellow"},
+  "Yellow/orange":{opts:"Blue Base cancels the orange side of it and lends a cooler result.", pt:"blue cancels the orange and violet cancels the yellow"},
   "Yellow":       {opts:"Violet Base is yellow's complement and leaves a clean neutral.", pt:"violet is yellow's complement"},
   "Pale yellow":  {opts:"Violet Base is pale yellow's complement; very little is needed at this level.", pt:"violet is yellow's complement"} };
 const PT_THEORY={
@@ -244,7 +244,7 @@ export function formulate(inp){
         intent = temp==="neutral" ? `A neutral result means the ${lo(nrp)} has to be fully neutralized.` : temp==="cool" ? `A ${lo(tName0)} result is cool, so the ${lo(nrp)} has to be neutralized before the cool reflection can read true.` : `${tName0} over ${lo(nrp)} would read too orange, so the NRP is refined (partly neutralized) first.`;
         chosen = `${baseN} replaces 5 g of the shade: ${th.opts}`; }
       else if(plan==="split"){ intent=`A ${lo(tName0)} result is cool, so the ${lo(nrp)} is neutralized and the reflection added on top.`; chosen=`Half of the Pure Tone amount goes to ${neutPT} — ${th.pt} — and half to ${ptName} for the reflection.`; }
-      else if(plan==="neut"){ intent=`A neutral result means the ${lo(nrp)} has to be fully neutralized.`; chosen=`${neutPT} does it: ${th.pt}. ${th.opts.replace(/^(\w+ Base)/,"With a base instead, $1")}`; }
+      else if(plan==="neut"){ intent=`A neutral result means the ${lo(nrp)} has to be fully neutralized.`; chosen=`${neutPT} does it: ${th.pt}.`; }
       else if(temp==="warm"){ intent=`${tName0} is a warm result in the same family as the ${lo(nrp)}, so the NRP is enhanced rather than fought.`; chosen=`Nothing is neutralized; the Pure Tone builds on the warmth the hair already has.`; }
       else { intent=`A ${lo(tName0)} result sits opposite the ${lo(nrp)} on the colour wheel, so the reflection neutralizes it as it tones.`; chosen=`${ptName||"The Pure Tone"} is the neutralizer and the reflection at once: ${ptWhy(ptName)}.`; }
       L.push(`<b>NRP.</b> ${exposed} ${intent} ${chosen}`);
