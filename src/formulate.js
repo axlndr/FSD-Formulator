@@ -41,17 +41,7 @@ export function blendTemp(blend,isLight){ if(blend.preset) return PRESETS[blend.
 export const blendLabel=blend=>blend.preset ? PRESETS[blend.preset].name : "custom tone";
 
 /* ---------- Formatting ---------- */
-export const half=(x)=>Math.round(x*2)/2; // scales in the dispensary read to the half gram
-export const g=(x)=>{ const v=half(+x); return Number.isInteger(v)?`${v} g`:`${v.toFixed(1)} g`; };
-// Split a total into half-gram parts that still add up to the (half-gram) total: largest remainder method.
-export function apportion(total, fractions){ // in half-gram units; every component keeps at least half a gram when the total allows
-  const units=Math.round(total*2), n=fractions.length; if(units<=0) return fractions.map(()=>0);
-  const minEach = units>=n ? 1 : 0; const want=fractions.map(f=>units*f);
-  const got=want.map(w=>Math.max(minEach, Math.floor(w))); let left=units-got.reduce((a,b)=>a+b,0);
-  const order=want.map((w,i)=>[w-got[i],i]).sort((a,b)=>b[0]-a[0]);
-  for(const [,i] of order){ if(left<=0) break; got[i]++; left--; }
-  while(left<0){ const i=got.map((v,i)=>[v-want[i],i]).sort((a,b)=>b[0]-a[0])[0][1]; if(got[i]>minEach){ got[i]--; left++; } else break; }
-  return got.map(u=>u/2); }
+export const g=(x)=>Number.isInteger(x)?`${x} g`:`${(+x).toFixed(1).replace(/\.0$/,"")} g`;
 export const ml=(x)=>`${Math.round(x)} ml`;
 /* ---------- Predicted result color ----------
    A simple pigment model for the swatch: start from the desired level's natural color,
@@ -338,8 +328,7 @@ export function formulate(inp){
 
   const pushPT=(arr,amount,label)=>{
     if(pig && pigF>=2){ arr.push([g(ptStd*mult*2*(amount/ptTotal)),pig.name]); return; } // rim: Pure Pigment replaces the Pure Tone at double the amount
-    if(t.blend){ const raw=bl.map(x=>amount*x[1]*(x[0].startsWith("Pure ")?pigScale(isLight):1)); const tot=raw.reduce((a,b)=>a+b,0); const parts=apportion(tot, raw.map(x=>x/tot)); bl.forEach((x,i)=>{ if(parts[i]>0) arr.push([g(parts[i]),x[0]]); }); }
-    else arr.push([g(amount),label||ptName]);
+    if(t.blend) bl.forEach(x=>arr.push([g(amount*x[1]*(x[0].startsWith("Pure ")?pigScale(isLight):1)),x[0]])); else arr.push([g(amount),label||ptName]);
     if(pig) arr.push([g(ptStd*mult*pigF*(amount/ptTotal)),pig.name]);
   };
   if(has2N && !split){ ptName=null; }

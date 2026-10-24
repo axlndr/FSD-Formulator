@@ -149,11 +149,11 @@ test("base customization: light = 10 g base + 10 g 12N, dark = 20 g base alone",
 /* ---------- Custom blends ---------- */
 test("Rose Gold on 12N splits the 2 g standard across Pink, Y/O and R/V", () => {
   const r = run({ nl:"4", dl:"8", tone:"blend", blend:blend("rosegold") });
-  assert.deepEqual(rows(r), ["20 g 12N", "1 g Pink (P)", "0.5 g Light Y/O", "0.5 g Light R/V"]); // 2 g in half-gram steps, every component kept
+  assert.deepEqual(rows(r), ["20 g 12N", "0.8 g Pink (P)", "0.8 g Light Y/O", "0.4 g Light R/V"]);
 });
 test("a Pure Pigment in a recipe is scaled ×⅔ on light shades and ×1⅓ on dark shades (Strawberry)", () => {
-  has(run({ nl:"4", dl:"6", tone:"blend", blend:blend("strawberry") }), "1.5 g Pure Pink"); // 8N: .3 × 8 × ⅔ = 1.6 → half-gram
-  has(run({ nl:"4", dl:"5", tone:"blend", blend:blend("strawberry") }), "1 g Pure Pink");   // 6N: .2 × 4 × 1⅓ = 1.07 → half-gram
+  has(run({ nl:"4", dl:"6", tone:"blend", blend:blend("strawberry") }), "1.6 g Pure Pink"); // 8N: .3 × 8 × ⅔
+  has(run({ nl:"4", dl:"5", tone:"blend", blend:blend("strawberry") }), "1.1 g Pure Pink"); // 6N: .2 × 4 × 1⅓
 });
 test("Butter is a soft Y/O by definition and neutralizes the NRP", () => {
   const r = run({ nl:"5", dl:"9", tone:"blend", blend:blend("butter") });
