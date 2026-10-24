@@ -1,4 +1,4 @@
-// Page wiring: reads the form, calls formulate(), renders the result and draws the colour wheel.
+// Page wiring: reads the form, calls formulate(), renders the result and draws the color wheel.
 import { GRID, DERIVED, TONES, SHORT, ORDER, RINGS, ringFor, PRESETS, PIGMENTS } from "./data.js";
 import { formulate, norm, nearestNode, nearestPigment, kFromR, pigFromR, rFromK, kLabel, blendList, recipeAngle, levelHex } from "./formulate.js";
 
@@ -15,16 +15,16 @@ dl.innerHTML=`<option value="">Select…</option>`+[10,9,8,7,6,5,4,3,2,1].map(l=
   tone.innerHTML=`<option value="">Select…</option><option value="bare">None (Natural Series alone)</option>`+ORDER.filter(g=>groups[g]).map(g=>`<optgroup label="${g}">${groups[g].join("")}</optgroup>`).join(""); }
 nl.value=""; dl.value=""; tone.value="";
 
-/* Level strips: ten swatches coloured by hair level; the hidden selects stay the source of truth */
+/* Level strips: ten swatches colored by hair level; the hidden selects stay the source of truth */
 for(const [sel,strip] of [[nl,"nlStrip"],[dl,"dlStrip"]]){
   $(strip).innerHTML=[1,2,3,4,5,6,7,8,9,10].map(l=>`<button type="button" class="lv" role="radio" aria-checked="false" data-l="${l}" style="--c:${levelHex(l)}" aria-label="Level ${l}"><span>${l}</span></button>`).join("");
   $(strip).addEventListener("click",e=>{ const b=e.target.closest(".lv"); if(!b) return; sel.value = sel.value===b.dataset.l ? "" : b.dataset.l; sel.dispatchEvent(new Event("change",{bubbles:true})); });
 }
 /* Grey strip: swatches of the natural level shot through with white strands at each percentage */
 const GREYS=[[0,"None"],[25,"25% or less"],[50,"About 50%"],[75,"About 75%"],[90,"90% or more"]];
-// Drawn hair swatches: fine strands in the natural level's colour, silver-white strands mixed in at the chosen percentage.
+// Drawn hair swatches: fine strands in the natural level's color, silver-white strands mixed in at the chosen percentage.
 const swatchCache={};
-/* Drawn hair swatch: fine strands whose colour runs from `fromHex` at the left to `toHex` at the right (same colour for a plain
+/* Drawn hair swatch: fine strands whose color runs from `fromHex` at the left to `toHex` at the right (same color for a plain
    swatch), with natural strand-to-strand variation, grey strands mixed in at `pct`, and a sheen band like a sample under salon light. */
 function hairSwatch({from,to,pct=0,w=96,h=80,sheen=true}){ const key=[from,to,pct,w,h,sheen].join("|"); if(swatchCache[key]) return swatchCache[key];
   const dpr=Math.min(3,window.devicePixelRatio||1), W=Math.round(w*dpr), H=Math.round(h*dpr);
@@ -106,7 +106,7 @@ function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n
 const hexRGB=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
 const TILE={natural:"Neutral",beigeash:"Beige Ash",gold:"Gold",copper:"Copper",rr:"Red/Red",rv:"Red/Violet",pink:"Pink",grey:"Grey",greyash:"Grey Ash",blueash:"Blue Ash",violetash:"Violet Ash",violet:"Violet",
   matte:"Matte",imatte:"Intense Matte",vcopper:"Copper",vred:"Red",vrv:"Red/Violet",ctrl:"Auto base",ctrlgreen:"Green",ctrlblue:"Blue",ctrlviolet:"Violet",blend:"Custom"};
-// Display colours: the formulation hexes are realistic hair tones; the picker shows them as glossy balls, lifted slightly.
+// Display colors: the formulation hexes are realistic hair tones; the picker shows them as glossy balls, lifted slightly.
 function vivid(hex){ const [h,s,l]=rgb2hsl(hexRGB(hex)); const S=Math.min(.7,s*1.15+.04), L=Math.min(.56,Math.max(.4,l+.06)); const c=hsl2rgb(h,S,L).map(v=>Math.round(v)); return `rgb(${c[0]},${c[1]},${c[2]})`; }
 const FAMS=ORDER.map(g=>g==="Matte-Olive"?{g,label:"Matte"}:g==="Neutral-Beige"?{g,label:"Neutral"}:{g,label:g});
 let openFam=null;
@@ -142,7 +142,7 @@ function syncPicker(){
   $("blendPanel").hidden = tone.value!=="blend";
   const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; }
 
-/* ---------- Colour wheel ---------- */
+/* ---------- Color wheel ---------- */
 const R=96, LT0=R+4, LT1=R+22, RIM0=R+25, RIM1=R+43, DK0=R+46, DK1=R+64, CX=180, CY=180, NEUTRAL="#a39d99";
 function rgb2hsl(c){const r=c[0]/255,g=c[1]/255,b=c[2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0;const l=(mx+mn)/2;if(mx!==mn){const d=mx-mn;s=l>0.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?((g-b)/d+(g<b?6:0)):mx===g?((b-r)/d+2):((r-g)/d+4);h*=60;}return [h,s,l];}
 function hsl2rgb(h,s,l){const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return [f(0)*255,f(8)*255,f(4)*255];}
@@ -247,7 +247,7 @@ function mixRows(rowsIn,dev,additive){
   const rows=rowsIn.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
   if(rowsIn.length){ const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
     if(additive) rows.push(`<tr class="add"><td>${additive[0]}</td><td>${additive[1]}</td></tr>`);
-    const tot=rowsIn.reduce((a,r)=>a+parseFloat(r[0]),0)+(additive?parseFloat(additive[0]):0)+parseFloat(d[0]); rows.push(`<tr class="total"><td>${Math.round(tot)} ml</td><td>total colour mixture</td></tr>`); }
+    const tot=rowsIn.reduce((a,r)=>a+parseFloat(r[0]),0)+(additive?parseFloat(additive[0]):0)+parseFloat(d[0]); rows.push(`<tr class="total"><td>${Math.round(tot)} ml</td><td>total color mixture</td></tr>`); }
   return rows.join("");
 }
 function render(o){

@@ -77,7 +77,7 @@ export const TONES = {
 
 export const SHORT={blend:"Custom",vcopper:"Vibrant Copper",vred:"Vibrant Red",vrv:"Vibrant Red/Violet",ctrl:"Neutralize NRP (auto base)",ctrlgreen:"Green Base",ctrlblue:"Blue Base",ctrlviolet:"Violet Base",natural:"Neutral",bare:"None"};
 
-/* ---------- Colour wheel: Pure Tones placed by hue ---------- */
+/* ---------- Color wheel: Pure Tones placed by hue ---------- */
 // Two rings, each placed by the tone's own hue (0 = east, counter-clockwise positive). key = chart family, for NRP logic.
 export const RINGS={
   light:[

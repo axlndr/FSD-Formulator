@@ -149,11 +149,11 @@ test("base customization: light = 10 g base + 10 g 12N, dark = 20 g base alone",
 /* ---------- Custom blends ---------- */
 test("Rose Gold on 12N splits the 2 g standard across Pink, Y/O and R/V", () => {
   const r = run({ nl:"4", dl:"8", tone:"blend", blend:blend("rosegold") });
-  assert.deepEqual(rows(r), ["20 g 12N", "0.8 g Pink (P)", "0.8 g Light Y/O", "0.4 g Light R/V"]);
+  assert.deepEqual(rows(r), ["20 g 12N", "1 g Pink (P)", "0.5 g Light Y/O", "0.5 g Light R/V"]); // 2 g in half-gram steps, every component kept
 });
 test("a Pure Pigment in a recipe is scaled ×⅔ on light shades and ×1⅓ on dark shades (Strawberry)", () => {
-  has(run({ nl:"4", dl:"6", tone:"blend", blend:blend("strawberry") }), "1.6 g Pure Pink"); // 8N: .3 × 8 × ⅔
-  has(run({ nl:"4", dl:"5", tone:"blend", blend:blend("strawberry") }), "1.1 g Pure Pink"); // 6N: .2 × 4 × 1⅓
+  has(run({ nl:"4", dl:"6", tone:"blend", blend:blend("strawberry") }), "1.5 g Pure Pink"); // 8N: .3 × 8 × ⅔ = 1.6 → half-gram
+  has(run({ nl:"4", dl:"5", tone:"blend", blend:blend("strawberry") }), "1 g Pure Pink");   // 6N: .2 × 4 × 1⅓ = 1.07 → half-gram
 });
 test("Butter is a soft Y/O by definition and neutralizes the NRP", () => {
   const r = run({ nl:"5", dl:"9", tone:"blend", blend:blend("butter") });
@@ -163,7 +163,7 @@ test("recipes tagged with levels warn outside them", () => {
   assert.match(run({ nl:"4", dl:"6", tone:"blend", blend:blend("milkchoc") }).warn, /reads best at levels 7–8/);
   assert.equal(run({ nl:"4", dl:"7", tone:"blend", blend:blend("milkchoc") }).warn, "");
 });
-test("wheel radius: centre is softest, inner ring standard, pigment rises toward the edge, rim replaces at 200%", () => {
+test("wheel radius: center is softest, inner ring standard, pigment rises toward the edge, rim replaces at 200%", () => {
   assert.equal(kFromR(0), 0.25); assert.equal(kFromR(0.5), 1); assert.equal(kFromR(1), 1.5);
   assert.equal(pigFromR(0.4), 0); assert.equal(pigFromR(1), 0.5);
   const mid = run({ nl:"4", dl:"6", tone:"blend", blend:{ preset:null, ang:38, k:1.25, pigF:0.25, vivid:false } });
@@ -190,14 +190,14 @@ test("every recipe component is a real Deep Pure Tone or Pure Pigment", () => {
   const names = new Set([...RINGS.light, ...RINGS.dark, ...PIGMENTS].map(n => n.name));
   for (const [k, r] of Object.entries(PRESETS)) for (const side of ["light", "dark"]) for (const [n] of r[side]) assert.ok(names.has(n), `${k} ${side}: unknown component ${n}`);
 });
-test("every tone family has a swatch colour and a group", () => {
+test("every tone family has a swatch color and a group", () => {
   for (const [k, t] of Object.entries(TONES)) { assert.match(t.hex, /^#[0-9a-f]{6}$/i, k); assert.ok(t.group, k); }
 });
 test("missing inputs produce an empty result naming what is missing", () => {
   assert.deepEqual(run({ nl:"", dl:"6", tone:"" }).missing, ["natural level", "tone"]);
 });
 
-test("predicted result colour: reflection tints toward the Pure Tone, lightness stays near the level", () => {
+test("predicted result color: reflection tints toward the Pure Tone, lightness stays near the level", () => {
   const plain=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["20 g","10N"]]});
   const copper=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["10 g","10N"],["10 g","12N"],["3 g","Light O/Y"]]});
   const ash=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["7.5 g","10N"],["7.5 g","12N"],["5 g","Blue Base"],["3 g","Light B/B"]]});
@@ -208,7 +208,7 @@ test("predicted result colour: reflection tints toward the Pure Tone, lightness 
   const lum=([r,g,b])=>0.2126*r+0.7152*g+0.0722*b;
   assert.ok(Math.abs(lum(rgb(copper))-lum(rgb(plain)))<40, "reflection does not change the level much");
 });
-test("predicted result colour: more lift exposes more NRP, a controlling base cancels it", () => {
+test("predicted result color: more lift exposes more NRP, a controlling base cancels it", () => {
   const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
   const warmth=h=>{const [r,g,b]=rgb(h);return r-b;};
   const lift3=predictHex({n:5,d:8,nrp:"Yellow/orange",rows:[["20 g","10N"]]});
@@ -217,29 +217,29 @@ test("predicted result colour: more lift exposes more NRP, a controlling base ca
   assert.ok(warmth(lift3)>warmth(lift0));
   assert.ok(warmth(based)<warmth(lift3));
 });
-test("formulate attaches a result colour to the formula and its alternative", () => {
+test("formulate attaches a result color to the formula and its alternative", () => {
   const r=formulate({nl:"5",dl:"8",tone:"blueash",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}});
   assert.match(r.result,/^#[0-9a-f]{6}$/); if(r.alt) assert.match(r.alt.result,/^#[0-9a-f]{6}$/);
 });
 
-test("Botanical Repair colour treatment plan follows the Reference Guide", () => {
+test("Botanical Repair color treatment plan follows the Reference Guide", () => {
   const base={nl:"5",dl:"8",tone:"copper",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
   const r=formulate({...base,porosity:"high",htype:"-1"});
   assert.equal(r.treat.level,"highly recommended"); assert.deepEqual(r.additive,["4.5 g","Botanical Repair™ Hair Strengthening Additive"]);
   assert.match(r.treat.steps[0],/5 ml Botanical Repair™ Professional Equalizing Primer/);
-  assert.match(r.treat.steps[1],/4\.5 g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the 23 g of colour \(8 g per 40 g\)/);
+  assert.match(r.treat.steps[1],/4\.5 g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the 23 g of color \(8 g per 40 g\)/);
   assert.match(r.treat.steps[4],/Bond Activator Light, process 10 minutes/);
   const m=formulate({...base,porosity:"medium",htype:"1"});
   assert.equal(m.treat.level,"recommended"); assert.match(m.treat.steps[4],/Bond Activator Rich/);
   const c=formulate({...base,porosity:"compromised"});
-  assert.equal(c.treat.level,"highly recommended"); assert.match(c.treat.lead,/Highly recommended on compromised hair/); assert.match(c.treat.lead,/Restorative Treatment/); assert.ok(c.notes.some(n=>/takes colour fast and unevenly/.test(n)));
+  assert.equal(c.treat.level,"highly recommended"); assert.match(c.treat.lead,/Highly recommended on compromised hair/); assert.match(c.treat.lead,/Restorative Treatment/); assert.ok(c.notes.some(n=>/takes color fast and unevenly/.test(n)));
   const l=formulate({...base,porosity:"low"});
-  assert.ok(l.notes.some(n=>/Low porosity resists colour/.test(n))); assert.match(l.treat.steps[0],/optional on low porosity/);
+  assert.ok(l.notes.some(n=>/Low porosity resists color/.test(n))); assert.match(l.treat.steps[0],/optional on low porosity/);
 });
 
-test("every formula carries the Strengthening Additive at 8 g per 40 g of colour", () => {
+test("every formula carries the Strengthening Additive at 8 g per 40 g of color", () => {
   const base={nl:"3",dl:"6",tone:"imatte",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
-  const r=formulate(base); // 15 g 9N + 5 g Green Base + 6 g Light G/G = 26 g colour
+  const r=formulate(base); // 15 g 9N + 5 g Green Base + 6 g Light G/G = 26 g color
   assert.deepEqual(r.additive,["5 g","Botanical Repair™ Hair Strengthening Additive"]);
   if(r.alt) assert.ok(r.alt.additive);
 });
