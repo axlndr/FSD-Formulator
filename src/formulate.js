@@ -1,6 +1,6 @@
 // Pure formulation logic: inputs in, formula out. No DOM access, so it can be tested on its own.
 import { GRID, shadeFor, DERIVED, PT_GRAMS, NRP, BASE_FOR_NRP, BASE_PAIR_FOR_NRP, NEUT_PT, COUNTERS, TEMP, TONES,
-         RINGS, ringFor, WARM_KEYS, PRESETS, PRESET_WHY, PIGMENTS, PT_FAM, pigScale } from "./data.js";
+         RINGS, ringFor, WARM_KEYS, PRESETS, PRESET_WHY, PIGMENTS, PT_FAM, pigScale, CHART_SWATCH, CHART_BASE, CHART_VIBRANT } from "./data.js";
 
 /* ---------- Developer ----------
    Lifting: 20 Volume is the standard; fine or thin hair may drop to 15 (never lower when lifting); coarse or thick hair may go
@@ -107,30 +107,59 @@ export function treatmentPlan(inp, rows, mult){
   const lead = por==="compromised" ? "Highly recommended on compromised hair: the primer equalizes porosity so color deposits evenly, the additive rebuilds bonds while the color processes, and the activator restores strength and reduces breakage after. Consider the Bond-Building and Strengthening Restorative Treatment as a separate service first." : por==="high" ? "Highly recommended on high-porosity hair: the primer equalizes porosity so color deposits evenly instead of grabbing at the porous areas, and the additive and activator protect the hair through the service." : "Aveda recommends the bond-building and strengthening color treatment with every color service (adds about 15 minutes).";
   return {level, lead, steps};
 }
+// Nearest charted shade for a tone family (the chart has no 12/14 for some cool tones and no light rows for N/N).
+function chartAt(key, shade){ const col=CHART_SWATCH[key]; if(!col) return null; if(col[shade]) return col[shade];
+  const ks=Object.keys(col).map(Number).sort((a,b)=>Math.abs(a-shade)-Math.abs(b-shade)); return ks.length?col[ks[0]]:null; }
+const NAT_SHADE=/^(\d+)N$/;
 export function predictHex({n,d,nrp,rows}){
   n=+n; d=+d; rows=rows||[];
-  const nat=rows.filter(r=>/^\d+N$/.test(r[1])); const natG=nat.reduce((a,r)=>a+parseFloat(r[0]),0);
-  const base=_hex2rgb(levelHex(d)); // the result lands at the desired level; the shade chosen is how it gets there
-  const baseG=Math.max(10, natG + rows.filter(r=>/Base$/.test(r[1])).reduce((a,r)=>a+parseFloat(r[0]),0));
-  // Pure Tone effect is judged against the shade's standard amount (standard = a standard reflection at any level) and shows
-  // more on lighter levels, where there is less natural pigment to compete with.
-  const shadeNums=nat.map(r=>parseInt(r[1])).filter(Number.isFinite);
-  const stdPT=Math.max(1, shadeNums.length ? shadeNums.reduce((a,x)=>a+(PT_GRAMS[x]||4),0)/shadeNums.length : 4) * (baseG/20);
-  const lightF=0.75+ (Math.max(1,Math.min(10,d))-1)/9*0.95; // level 1 → 0.75, level 10 → 1.7
-  const lift=d-n; let wN = lift>=3 ? .4 : lift>0 ? .26 : .12;
-  const nrpHex=NRP_HEX[nrp]||"#c4661f"; const nrpHue=_hsl(_hex2rgb(nrpHex))[0];
-  const tints=[];
-  for(const [gs,name] of rows){ const g=parseFloat(gs); const hex=componentHex(name); if(!hex||!(g>0)) continue;
-    if(BASE_HEX[name]){ wN*=Math.max(0, 1-(g/baseG)*3.2); tints.push([hex,Math.min(.22,(g/baseG)*.5*lightF)]); continue; }
-    const hue=_hsl(_hex2rgb(hex))[0]; const opp=_hueDist(hue,(nrpHue+180)%360)<50;
-    const pig=name.startsWith("Pure "); const dark=name.startsWith("Dark ");
-    let w = name==="Red Base" ? Math.min(.55,(g/baseG)*1.3) : Math.min(.6,(g/stdPT)*0.3*(pig?1.5:dark?1.3:1)*lightF);
-    if(opp){ wN*=Math.max(0,1-w*2.2); w*=.45; }
-    tints.push([hex,w]); }
-  let c=_lerp(base,_hex2rgb(nrpHex),Math.max(0,Math.min(.45,wN)));
-  for(const [hex,w] of tints) c=_lerp(c,_hex2rgb(hex),w);
-  const [h,s,l]=_hsl(c); const lb=_hsl(base)[2]; const L=Math.max(lb-.12,Math.min(lb+.05,l));
-  return _rgb2hex(_rgb(h,Math.min(.6,s),L));
+  const shades=rows.map(r=>(r[1].match(NAT_SHADE)||[])[1]).filter(Boolean).map(Number);
+  const shade = shades.length ? Math.round(shades.reduce((a,b)=>a+b,0)/shades.length) : (d>=8?12:d+1);
+  const isLight = shade>=8;
+  // 1. Start from the chart: the shade alone, then the tone family swatches weighted by their share of the Pure Tone amount.
+  const natHex = chartAt("natural", shade) || levelHex(d);
+  let tone=[0,0,0], toneG=0, pigBoost=0; const baseTints=[]; let vib=null, redBaseG=0;
+  for(const [gs,name] of rows){ const g=parseFloat(gs); if(!(g>0)) continue;
+    if(NAT_SHADE.test(name) || name==="Bright Base") continue;
+    if(name==="Red Base"){ redBaseG+=g; continue; }
+    if(CHART_BASE.light[name]){ baseTints.push([CHART_BASE[isLight?"light":"dark"][name], g]); continue; }
+    const key = /N\/N$/.test(name) ? "nn" : PT_FAM[name]; if(!key) continue;
+    const hex = chartAt(key, shade); if(!hex) continue;
+    const c=_hex2rgb(hex); tone=tone.map((v,i)=>v+c[i]*g); toneG+=g;
+    if(name.startsWith("Pure ")) pigBoost+=g;
+  }
+  let c;
+  if(redBaseG>0){ // Vibrant Red series: the chart's vibrant swatches, by the Pure Tone used, blended dark→light across levels 4–9
+    const vkey = rows.some(r=>/R\/V$/.test(r[1])) ? "vrv" : rows.some(r=>/R\/R$/.test(r[1])) ? "vred" : "vcopper";
+    const tv=Math.max(0,Math.min(1,(d-4)/5));
+    c=_lerp(_hex2rgb(CHART_VIBRANT[vkey].dark),_hex2rgb(CHART_VIBRANT[vkey].light),tv);
+  } else {
+    c=_hex2rgb(natHex);
+    if(toneG>0){ const t=tone.map(v=>v/toneG); const std=(PT_GRAMS[shade]||4)*Math.max(1, rows.filter(r=>NAT_SHADE.test(r[1])||CHART_BASE.light[r[1]]).reduce((a,r)=>a+parseFloat(r[0]),0)/20);
+      const k=Math.min(1.4, toneG/std); // 1 = the chart's standard formula
+      c=_lerp(c,t,Math.min(1,k)); if(k>1){ const [h,sa,l]=_hsl(c); c=_rgb(h,Math.min(1,sa*(1+(k-1)*.8)),l); } }
+    // A controlling base cools the tone without darkening it: shift toward the base's hue at the colour's own lightness.
+    for(const [hex,g] of baseTints){ const [bh,bs]=_hsl(_hex2rgb(hex)); const l0=_hsl(c)[2]; c=_lerp(c,_rgb(bh,Math.min(.3,bs),l0),Math.min(.22,g/20*.85)); }
+    if(pigBoost>0){ const [h,sa,l]=_hsl(c); c=_rgb(h,Math.min(1,sa*1.3),l); }
+  }
+  // 2. Settle it on the desired level: the chart swatch is the formula as designed; the natural pigment that remains pulls it
+  //    toward the hair at level d, more so the further the shade sits above the result level.
+  const lift=d-n; const wN0 = lift>=3 ? .32 : lift>0 ? .2 : .08; let wN=wN0;
+  for(const [,g] of baseTints) wN*=Math.max(0,1-(g/20)*3);
+  const nrpHue=_hsl(_hex2rgb(NRP_HEX[nrp]||"#c4661f"))[0];
+  for(const [gs,name] of rows){ const key=PT_FAM[name]; const hx=key&&RINGS&&[...RINGS.light,...RINGS.dark,...PIGMENTS].find(x=>x.name===name)?.hex; if(!hx) continue;
+    if(_hueDist(_hsl(_hex2rgb(hx))[0],(nrpHue+180)%360)<50) wN*=Math.max(0,1-parseFloat(gs)/ (PT_GRAMS[shade]||4)*.8); }
+  // the hair the formula sits on: the level's natural brown, with its warmth reduced by however much the formula neutralizes
+  const neutFrac=wN0>0?wN/wN0:1; const [hh,hs,hl]=_hsl(_hex2rgb(levelHex(d)));
+  const hair=_lerp(_rgb(hh,hs*(0.35+0.65*neutFrac),hl),_hex2rgb(NRP_HEX[nrp]||"#c4661f"),Math.max(0,Math.min(.4,wN)));
+  const f=redBaseG>0 ? .15 : Math.max(.1,Math.min(.4,(shade-d)/10+.1));
+  c=_lerp(c,hair,f);
+  // 3. Keep the lightness near the desired level (vibrant reds are allowed to sit deeper and keep their saturation).
+  const [h,sa,l]=_hsl(c); const lb=_hsl(_hex2rgb(levelHex(d)))[2];
+  if(redBaseG>0){ // the vibrant swatch is the colour; the level only nudges its depth
+    return _rgb2hex(_rgb(h,Math.max(.4,Math.min(.8,sa*1.1)),l+(lb-l)*.35)); }
+  const L=Math.max(lb-.10,Math.min(lb+(lift>=2?.02:.06),l)); // a strong lift rarely lands lighter than its level
+  return _rgb2hex(_rgb(h,Math.min(.6,sa),L));
 }
 export function levelHex(l){const s=["#140c08","#2a1a10","#3f2616","#5a3a2a","#7a5236","#9a6e46","#b88a5a","#d2a978","#e6c998","#f3e3bd"];return s[Math.min(Math.max(l,1),10)-1];}
 const SCORE=x=>(x===""||x==null)?0:+x;
