@@ -198,10 +198,16 @@ export function formulate(inp){
     else L.push(`<b>Natural Series shade.</b> Going darker, use the shade one level above the desired level: ${shadeTxt}.`);
     if(DERIVED(n)) L.push(`The chart covers natural levels 1–6; natural ${n} uses the same rule.`);
     if(gy>0){
-      const gTemp = t.none ? "neutral" : TEMP(inp.tone);
-      const gCovers = gTemp==="cool" && (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp);
-      L.push(`<b>Grey coverage.</b> ${t.none?`${nnName} at the shade's standard amount covers the grey.`:`The Pure Tone amount is split equally between ${nnName} for coverage and ${ptName||"the reflection"} for the ${lo(tName0)} reflection.`} ${cov==="max"?"Maximum coverage: Catalyst 1:2 on the Natural Series only.":"Natural coverage: Catalyst 1:2 on all the colour."}`);
-      L.push(`<b>NRP.</b> ${gy>=90?"Even hair this grey":"The pigmented hair"} still exposes ${lo(nrp)} at level ${d}${gy>=90?" (and grey itself contributes pale yellow)":""}. ${t.none?`The Natural Series cool base neutralizes it here; to neutralize more, see the alternative with ${NEUT_PT[nrp]?.[isLight?"light":"dark"]||"the complementary Pure Tone"}.`:gCovers?`${tName0} is its complement, so the reflection neutralizes it.`:gTemp==="warm"?`${tName0} is a warm tone, so the NRP is enhanced; the Natural Series cool base keeps it from going brassy.`:`The Natural Series cool base neutralizes it under the ${lo(tName0)} reflection.`}`);
+      const gCovers = temp==="cool" && (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp);
+      const gNeut=NEUT_PT[nrp]&&NEUT_PT[nrp][isLight?"light":"dark"];
+      L.push(`<b>Grey coverage.</b> ${t.none&&plan!=="split"?`${nnName} at the shade's standard amount covers the grey.`:t.none?`${nnName} takes half the Pure Tone amount for coverage.`:`The Pure Tone amount is split between ${nnName} for coverage and ${ptName||"the reflection"} for the ${lo(tName0)} reflection.`} ${cov==="max"?"Maximum coverage: Catalyst 1:2 on the Natural Series only.":"Natural coverage: Catalyst 1:2 on all the colour."}`);
+      const nrpLine=`${gy>=90?"Even hair this grey":"The pigmented hair"} still exposes ${lo(nrp)} at level ${d}${gy>=90?" (and grey itself contributes pale yellow)":""}${d<=n?", though with no lift very little of it shows":""}.`;
+      const what = plan==="base" ? `${BASE_FOR_NRP(d)} replaces 5 g of the shade to neutralize it${gCovers?`, and ${ptName} reinforces that as its complement`:""}.`
+        : plan==="split" ? `${gNeut} takes a share of the Pure Tone amount to neutralize it.`
+        : temp==="warm" ? `${tName0} is a warm tone, so the NRP is enhanced rather than neutralized.`
+        : gCovers ? `${tName0} is its complement, so the reflection neutralizes it.`
+        : d<=n ? `No neutralizer is needed without lift.` : `It is not neutralized in this formula; see the alternative with ${BASE_FOR_NRP(d)}.`;
+      L.push(`<b>NRP.</b> ${nrpLine} ${what}`);
     }
     else if(t.ctrl) L.push(`<b>NRP.</b> At level ${d} the hair exposes ${lo(nrp)}. ${BASE_FOR_NRP(d)} is its complement, so 5 g of it replaces 5 g of the shade for a neutral result.`);
     else if(!t.vibrant && !t.baseOnly){
@@ -209,7 +215,7 @@ export function formulate(inp){
       const what = plan==="base" ? `${tName0} is a ${temp} tone, so the NRP is neutralized: ${BASE_FOR_NRP(d)} replaces 5 g of the shade.`
         : plan==="split" ? `${tName0} is a cool tone, so the NRP is neutralized with ${neutPT} (half the Pure Tone amount) and the other half goes to ${ptName} for the reflection.`
         : plan==="neut" ? `A neutral result, so the NRP is neutralized with ${neutPT}, its complement.`
-        : t.bare ? `No tone was chosen, so the shade goes on alone and its cool-brown base neutralizes the NRP.`
+        : t.bare ? `No tone was chosen, so the shade goes on alone. The NRP is not neutralized here; the alternative replaces 5 g of the shade with ${BASE_FOR_NRP(d)}.`
         : temp==="warm" ? `${tName0} is a warm tone, so the NRP is enhanced: nothing is neutralized.`
         : `${tName0} is complementary to the NRP, so the Pure Tone itself neutralizes it.`;
       L.push(`<b>NRP.</b> ${nrpLine} ${what}`);
@@ -285,20 +291,41 @@ export function formulate(inp){
 
   if(gy>0){
     kicker = cov==="max" ? "Grey coverage · maximum" : "Grey coverage · natural";
-    if(ptStd===0){ notes.push("2N is not recommended for customization; cover grey with the shade alone."); }
-    else if(t.none){ rows.push([g(ptTotal),nnName]); why.push(`Grey coverage, neutral: ${nnName} at the shade's standard amount (${g(ptStd)} per 20 g). N/N is the coverage tone; the Natural Series base handles the NRP.`); }
-    else if(!ptName){ rows.push([g(ptTotal),nnName]); warn=`${t.name} is not charted at ${isLight?"light":"dark"} shades, so only ${nnName} is shown. Pick a family with a ${isLight?"Light":"Dark"} Pure Tone to add a reflection.`; }
-    else { rows.push([g(ptTotal/2),nnName]); pushPT(rows,ptTotal/2); why.push(`Grey coverage with a reflection: split the shade's Pure Tone amount equally between ${nnName} and ${ptName}.`); }
+    // The pigmented hair still exposes NRP (pale yellow even at 100% grey), so grey coverage neutralizes it like any other
+    // formula: a controlling base for neutral and cool results, Pure Tone when asked, nothing when the tone is warm (enhance).
+    const gLift=d>n; temp = t.none ? "neutral" : TEMP(inp.tone);
+    const gCovers = temp==="cool" && (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp);
+    const gNeut=NEUT_PT[nrp]&&NEUT_PT[nrp][isLight?"light":"dark"]; const gBase=BASE_FOR_NRP(d);
+    exposure = d-n>=3 ? "strong" : d-n>=1 ? "moderate" : "none";
+    let gPlan="none";
+    if(gLift && mode!=="enhance" && mode!=="chart" && ptStd>0){
+      if(mode==="pt") gPlan = gCovers ? "none" : "pt";
+      else if(mode==="base") gPlan="base";
+      else gPlan = temp==="warm" ? "none" : "base";
+    }
+    if(t.bare) gPlan="none"; // "None" is an explicit choice: shade and N/N only, with the base shown as the alternative
+    plan = gPlan==="base" ? "base" : gPlan==="pt" ? "split" : "none";
+    const natRows=(withBase)=>{ const ar=[]; if(withBase){ if(split) shades.forEach(sh=>ar.push([g(7.5*mult),sh+"N"])); else ar.push([g(15*mult),baseName[0]]); ar.push([g(5*mult),gBase]); }
+      else { if(split) shades.forEach(sh=>ar.push([g(10*mult),sh+"N"])); else ar.push([g(20*mult),baseName[0]]); } return ar; };
+    const toneRows=(usePT)=>{ const ar=[];
+      if(ptStd===0) return ar;
+      if(t.none){ if(usePT && gNeut){ ar.push([g(ptTotal/2),nnName],[g(ptTotal/2),gNeut]); } else ar.push([g(ptTotal),nnName]); }
+      else if(!ptName){ ar.push([g(ptTotal),nnName]); }
+      else if(usePT && !gCovers && gNeut){ ar.push([g(ptTotal/2),nnName]); pushPT(ar,ptTotal/4); ar.push([g(ptTotal/4),gNeut]); }
+      else { ar.push([g(ptTotal/2),nnName]); pushPT(ar,ptTotal/2); }
+      return ar; };
+    rows.length=0; rows.push(...natRows(gPlan==="base"), ...toneRows(gPlan==="pt"));
+    if(ptStd===0) notes.push("2N is not recommended for customization; cover grey with the shade alone.");
+    if(ptStd>0 && !t.none && !ptName) warn=`${t.name} is not charted at ${isLight?"light":"dark"} shades, so only ${nnName} is shown. Pick a family with a ${isLight?"Light":"Dark"} Pure Tone to add a reflection.`;
     if(isLight && shades.some(s=>s>=12)) warn = warn || "N/N is not charted for 12N and 14N. Expect sheer blending rather than coverage at these shades.";
-    catalystBase = cov==="max" ? baseG*shades.length : baseG*shades.length + rows.slice(shades.length).reduce((a,r)=>a+parseFloat(r[0]),0);
-    why.push(cov==="max" ? "Maximum coverage: Color Catalyst 1:2 on the Natural Series only; do not adjust for Pure Tone." : "Natural coverage: Color Catalyst 1:2 on the total colour components.");
-    // The pigmented hair still exposes NRP (pale yellow even at 100% grey). The Natural Series cool base is the deck's answer; when
-    // the result should be neutral and there is lift, offer a neutralizing Pure Tone split as the alternative.
-    let gAlt=null; const gNeut=NEUT_PT[nrp]&&NEUT_PT[nrp][isLight?"light":"dark"];
-    if(t.none && d>n && gNeut && ptStd>0){ const ar=[]; if(split) shades.forEach(sh=>ar.push([g(10*mult),sh+"N"])); else ar.push([g(20*mult),baseName[0]]);
-      ar.push([g(ptTotal/2),nnName],[g(ptTotal/2),gNeut]);
-      const cb = cov==="max" ? baseG*shades.length : baseG*shades.length+ptTotal;
-      gAlt={kicker:"Alternative · neutralize the NRP", sub:`Half ${nnName}, half ${gNeut} to counter the ${nrp.toLowerCase()} the pigmented hair exposes`, rows:ar, dev:`${ml(cb*2)} · ${vol}`}; }
+    const natG=20*mult*(split?1:1); const toneG=(ar)=>ar.slice(split?2:1).filter(r=>!/Base$/.test(r[1])).reduce((a,r)=>a+parseFloat(r[0]),0);
+    const catFor=(ar)=> cov==="max" ? natG : natG + toneG(ar);
+    catalystBase=catFor(rows);
+    why.push(cov==="max" ? "Maximum coverage: Color Catalyst 1:2 on the Natural Series (and base) only; do not adjust for Pure Tone." : "Natural coverage: Color Catalyst 1:2 on the total colour components.");
+    let gAlt=null;
+    if(gPlan==="base"){ const ar=[...natRows(false), ...toneRows(gNeut?true:false)]; gAlt={kicker:"Alternative · Pure Tone route", sub:gNeut?`No controlling base: ${gNeut} takes a share of the Pure Tone amount to neutralize the ${nrp.toLowerCase()}`:"Without a controlling base", rows:ar, dev:`${ml(catFor(ar)*2)} · ${vol}`}; }
+    else if(gPlan==="none" && gLift && temp!=="warm" && ptStd>0){ const ar=[...natRows(true), ...toneRows(false)]; gAlt={kicker:"Alternative · controlling base", sub:`${gBase} replaces 5 g of the shade to neutralize the ${nrp.toLowerCase()}`, rows:ar, dev:`${ml(catFor(ar)*2)} · ${vol}`}; }
+    if(gPlan==="base" && gy>=75) notes.push(`${gBase} replaces 5 g of the Natural Series, which carries the coverage. On this much grey, strand test; the Pure Tone route is the alternative if coverage falls short.`);
     if(gy>=90) notes.push("With 90% or more grey, use maximum coverage with the shade's full N/N amount and consider a darker shade for depth; strand test.");
     else if(gy>=75) notes.push("With about 75% grey, lean on maximum coverage and the shade's full N/N amount; strand test.");
     notes.push("Bright Base is not recommended for grey coverage.");
@@ -315,7 +342,7 @@ export function formulate(inp){
   const neutPT = NEUT_PT[nrp][isLight?"light":"dark"];
   const base=BASE_FOR_NRP(d);
   // plan: "none" | "base" | "split" (neutralizer + reflection) | "neut" (neutralizer alone)
-  if(t.bare){ plan="none"; reason=`No reflective tone chosen: the ${shadeLabel} Natural Series shade goes on alone. Its cool-brown base neutralizes the ${nrp.toLowerCase()} NRP for a natural result, as the deck describes.`; }
+  if(t.bare){ plan="none"; reason=`No reflective tone chosen: the ${shadeLabel} Natural Series shade goes on alone. The ${nrp.toLowerCase()} NRP is not neutralized; the alternative replaces 5 g of the shade with ${base}.`; }
   else if(exposure==="none" || mode==="chart" || mode==="enhance"){
     plan="none";
     reason = exposure==="none" ? `No lift, so no NRP is exposed; the ${shadeLabel} cool-brown base deposits over the existing level.`

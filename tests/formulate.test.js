@@ -27,10 +27,13 @@ test("deck: natural 2 → 5 with a controlling base = 15 g 8N + 5 g Green Base, 
   assert.deepEqual(rows(r), ["15 g 8N", "5 g Green Base"]);
   assert.equal(r.dev, "40 ml · 20 Volume");
 });
-test("deck: natural 4 → 6 maximum grey coverage = 20 g 8N + 8 g Light N/N, 40 ml (Catalyst on the Natural Series only)", () => {
+test("grey coverage neutralizes the NRP: natural 4 → 6 maximum coverage = 15 g 8N + 5 g Green Base + 8 g Light N/N, 40 ml; Pure Tone route as the alternative", () => {
   const r = run({ nl:"4", dl:"6", tone:"natural", grey:"50", cov:"max" });
-  assert.deepEqual(rows(r), ["20 g 8N", "8 g Light N/N"]);
-  assert.equal(r.dev, "40 ml · 20 Volume");
+  assert.deepEqual(rows(r), ["15 g 8N", "5 g Green Base", "8 g Light N/N"]);
+  assert.equal(r.dev, "40 ml · 20 Volume"); // maximum coverage: Catalyst 1:2 on the 20 g of Natural Series and base only
+  assert.deepEqual(r.alt.rows.map(x=>x.join(" ")), ["20 g 8N", "4 g Light N/N", "4 g Light B/Gr"]);
+  // the deck's chart formula (no neutralizer) is still available through "Chart formula as printed"
+  assert.deepEqual(rows(run({ nl:"4", dl:"6", tone:"natural", grey:"50", cov:"max", nrpMode:"chart" })), ["20 g 8N", "8 g Light N/N"]);
 });
 test("leaflet answer key: shade 9 Red/Violet = 20 g 9N + 6 g Light R/V; shade 5 Grey Ash = 20 g 5N + 6 g Dark Gr/B (chart formulas)", () => {
   const rv = run({ nl:"5", dl:"7", tone:"rv" });                       // 5 → 7 lands on 9N; warm reflection, nothing neutralized
@@ -239,11 +242,10 @@ test("every formula carries the Strengthening Additive at 8 g per 40 g of colour
   if(r.alt) assert.ok(r.alt.additive);
 });
 
-test("grey with lift: NRP is named in the walkthrough and a neutralizing alternative is offered for a neutral result", () => {
+test("grey with lift: NRP is named in the walkthrough; warm tones enhance, cool tones get the base too", () => {
   const base={nl:"4",dl:"6",tone:"natural",grey:"50",cov:"max",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
-  const r=formulate(base);
-  assert.deepEqual(r.rows,[["20 g","8N"],["8 g","Light N/N"]]); // deck formula stays primary
-  assert.ok(r.alt && r.alt.rows.some(x=>x[1]==="Light N/N") && r.alt.rows.some(x=>/^Light /.test(x[1]) && x[1]!=="Light N/N"));
-  assert.ok(r.teach.some(x=>/still exposes red\/orange/.test(x)));
-  const w=formulate({...base,tone:"copper"}); assert.ok(w.teach.some(x=>/warm tone, so the NRP is enhanced/.test(x)));
+  const r=formulate(base); assert.ok(r.teach.some(x=>/still exposes red\/orange/.test(x) && /Green Base replaces 5 g/.test(x)));
+  const w=formulate({...base,tone:"copper"}); assert.ok(!w.rows.some(x=>/Base$/.test(x[1]))); assert.ok(w.teach.some(x=>/warm tone, so the NRP is enhanced/.test(x)));
+  const c=formulate({...base,tone:"imatte",nl:"3"}); assert.ok(c.rows.some(x=>x[1]==="Green Base") && c.rows.some(x=>x[1]==="Light N/N") && c.rows.some(x=>x[1]==="Light G/G"));
+  const nolift=formulate({...base,nl:"6",dl:"6"}); assert.ok(!nolift.rows.some(x=>/Base$/.test(x[1])));
 });
