@@ -109,10 +109,14 @@ test("pattern: 2B–3B formulates ½ level lighter (equal-parts cell), 3C–4C a
   assert.deepEqual(rows(run({ nl:"4", dl:"7", tone:"copper", texture:"0.5" })), ["10 g 10N", "10 g 12N", "3 g Light O/Y"]);
   assert.deepEqual(rows(run({ nl:"4", dl:"7", tone:"copper", texture:"1" })), ["20 g 12N", "2 g Light O/Y"]);
 });
-test("developer: fine + thin = 1 volume lower; coarse + thick is held at 20 on the scalp and goes to 30 off the scalp", () => {
-  assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"-1", density:"-1" }).dev.split(" · ")[1], "10 Volume");
+test("developer: lifting never drops below 15 Volume; coarse + thick is held at 20 on the scalp and goes to 30 off the scalp; depositing is 10 (or 5)", () => {
+  assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"-1", density:"-1" }).dev.split(" · ")[1], "15 Volume (equal parts 10 + 20)");
+  assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"-1", density:"-1", texture:"0" }).dev.split(" · ")[1], "15 Volume (equal parts 10 + 20)");
+  assert.equal(run({ nl:"6", dl:"4", tone:"copper", htype:"1", density:"1", scalp:"off" }).dev.split(" · ")[1], "10 Volume (or 5 Volume)");
+  assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"1", density:"1", scalp:"off", texture:"1" }).dev.split(" · ")[1], "40 Volume");
   assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"1", density:"1" }).dev.split(" · ")[1], "20 Volume");
-  assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"1", density:"1", scalp:"off" }).dev.split(" · ")[1], "30 Volume");
+  assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"1", scalp:"off" }).dev.split(" · ")[1], "30 Volume");          // coarse or thick: 30 off the scalp
+  assert.equal(run({ nl:"4", dl:"7", tone:"copper", htype:"1", density:"1", scalp:"off" }).dev.split(" · ")[1], "40 Volume"); // coarse and thick: 40 off the scalp
   assert.equal(devChoice(true, -1, false).label, "15 Volume (equal parts 10 + 20)");
 });
 test("formula strength: straight/fine/thin averages soft (at a 2-level lift); a developer need above 20 bumps standard to strong", () => {

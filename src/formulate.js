@@ -2,16 +2,17 @@
 import { GRID, shadeFor, DERIVED, PT_GRAMS, NRP, BASE_FOR_NRP, BASE_PAIR_FOR_NRP, NEUT_PT, COUNTERS, TEMP, TONES,
          RINGS, ringFor, WARM_KEYS, PRESETS, PRESET_WHY, PIGMENTS, PT_FAM, pigScale } from "./data.js";
 
-/* ---------- Developer ---------- */
-export const LADDER=[5,10,15,20,25,30,40];
-export const devLabel=v=>({15:"15 Volume (equal parts 10 + 20)",25:"25 Volume (equal parts 20 + 30)",35:"35 Volume (equal parts 30 + 40)"})[v]||`${v} Volume`;
+/* ---------- Developer ----------
+   Lifting: 20 Volume is the standard; fine or thin hair may drop to 15 (never lower when lifting); coarse or thick hair may go
+   to 30 or 40, off the scalp only. On the scalp the maximum is 20. Depositing (darker or same level): 10 Volume, or 5. */
+export const LADDER=[15,20,30,40];
+export const devLabel=v=>({15:"15 Volume (equal parts 10 + 20)"})[v]||`${v} Volume`;
 export function devChoice(lifting,steps,offScalp){
-  const base=lifting?3:1; let idx=Math.max(0,Math.min(LADDER.length-1,base+steps)); let v=LADDER[idx]; const requested=v; let capped=false;
+  if(!lifting) return {v:10,requested:10,label:"10 Volume (or 5 Volume)",capped:false};
+  const idx=Math.max(0,Math.min(LADDER.length-1,1+steps)); let v=LADDER[idx]; const requested=v; let capped=false;
   if(!offScalp && v>20){ v=20; capped=true; }
-  return {v,requested,label:devLabel(v)+(lifting?"":v===10&&steps===0?" (or 5 Volume)":""),capped};
+  return {v,requested,label:devLabel(v),capped};
 }
-
-/* ---------- Color wheel geometry (angles only; drawing lives in ui.js) ---------- */
 export const norm=a=>((a+180)%360+360)%360-180;
 export const nearestNode=(ang,isLight)=>ringFor(isLight).reduce((b,n)=>Math.abs(norm(ang-n.ang))<Math.abs(norm(ang-b.ang))?n:b);
 export const nearestPigment=ang=>PIGMENTS.reduce((b,p)=>Math.abs(norm(ang-p.ang))<Math.abs(norm(ang-b.ang))?p:b);
@@ -458,7 +459,7 @@ export function formulate(inp){
   else if(!ptName){ warn=`${tName} is only charted at ${isLight?"dark (4N–7N)":"light (8N–14N)"} shades. This result lands on ${shadeLabel}, so no Pure Tone is charted for it. Consider a neighboring family.`; if(plan==="split") rows.push([g(ptTotal/2),neutPT]); }
   else if(plan==="split"){ rows.push([g(ptTotal/2),neutPT]); pushPT(rows,ptTotal/2); why.push(`${g(ptStd)} standard for ${shadeLabel}, split equally: ${neutPT} to neutralize, ${ptName} for the reflection${k!==1?` (${k>1?"+50%":"−50%"} total)`:""}.`); }
   else { pushPT(rows,ptTotal); why.push(`${isLight?"Light":"Dark"} Pure Tone for ${shadeLabel}: ${g(ptStd)} ${ptName} per 20 g${split?" (average of the two shades)":""}${k!==1?`, ${k>1?"50% more":"50% less"} for a ${k>1?"strong":"soft"} formula`:""}.`); }
-  if(pig && rows.some(r=>r[1]===pig.name)){ why.push(pigF>=2 ? `Outer rim: ${pig.name} (Full Spectrum Permanent Pure Pigment, nearest to the tone's hue) replaces the Pure Tone at double the shade's standard amount, the deck's upper limit.` : `${pig.name} (Full Spectrum Permanent Pure Pigment, nearest to the tone's hue) added at ${Math.round(pigF*100)}% of the shade's standard amount${pigF>=0.5?", the deck's intensify guideline (half the amount)":""}.`); notes.push("Pure Pigments are concentrated single tones: strand test, keep Color Catalyst 1:2 on the total mixture, and don't oversaturate or the reflection goes flat. The Permanent guide does not recommend Pure Pigments at levels 8–10 except Pure Pink."); }
+  if(pig && rows.some(r=>r[1]===pig.name)){ why.push(pigF>=2 ? `Outer rim: ${pig.name} (Full Spectrum Permanent Pure Pigment, nearest to the tone's hue) replaces the Pure Tone at double the shade's standard amount, the deck's upper limit.` : `${pig.name} (Full Spectrum Permanent Pure Pigment, nearest to the tone's hue) added at ${Math.round(pigF*100)}% of the shade's standard amount${pigF>=0.5?", the deck's intensify guideline (half the amount)":""}.`); notes.push(`Pure Pigments are concentrated single tones: strand test, keep Color Catalyst 1:2 on the total mixture, and don't oversaturate or the reflection goes flat.${d>=8&&pig.name!=="Pure Pink"?" At levels 8–10 Pure Pigments are not recommended for natural-looking results; this is a fashion tone, so strand test.":""}`); }
   if(recipeHasPig && rows.some(r=>r[1].startsWith("Pure "))){ why.push(`The blend includes a Full Spectrum Permanent Pure Pigment. Its strength sits between Deep Light and Dark Pure Tones, so its share is scaled ×${isLight?"⅔":"1⅓"} on ${isLight?"light":"dark"} shades to match the intended strength.`); notes.push("Pure Pigments follow the law of color and are not intermixed with each other to make secondary colors; keep Color Catalyst 1:2 on the total."); }
   catalystBase = rows.reduce((a,r)=>a+parseFloat(r[0]),0);
   if(plan==="none" && exposure!=="none" && temp!=="cool" && mode==="auto" && !t.none) notes.push(`If the result pulls too warm, swap to “Always neutralize with Pure Tones” to split in ${neutPT}, or add ${base}.`);
