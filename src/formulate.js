@@ -66,11 +66,11 @@ function componentHex(name){
 /* ---------- Colour theory for the walkthrough ----------
    What each NRP needs and what each Deep component does, in plain words. Used to explain the formula, not to choose it. */
 const NRP_THEORY={
-  "Red":          {opts:"Green Base is red's complement and cancels it cleanly; Blue Base would leave red warmth behind.", pt:"green is red's complement"},
+  "Red":          {opts:"Green Base is red's complement and cancels it cleanly.", pt:"green is red's complement"},
   "Red/orange":   {opts:"Green Base cancels the red side and Blue Base the orange side; Green alone leaves a touch of orange, Blue alone a touch of red, and a combination of the two covers both.", pt:"blue cancels the orange and green or grey cancels the red"},
-  "Orange":       {opts:"Blue Base is orange's complement and gives a clean, cooler result; Violet Base would leave some orange warmth behind.", pt:"blue is orange's complement"},
+  "Orange":       {opts:"Blue Base is orange's complement and gives a clean, cooler result.", pt:"blue is orange's complement"},
   "Yellow/orange":{opts:"Blue Base cancels the orange side and lends a cooler result; Violet Base cancels the yellow side and leaves a little warmth for a softer beige; a combination of Blue and Violet covers both.", pt:"blue cancels the orange and violet cancels the yellow"},
-  "Yellow":       {opts:"Violet Base is yellow's complement and leaves a clean neutral; Blue Base over yellow can drift green.", pt:"violet is yellow's complement"},
+  "Yellow":       {opts:"Violet Base is yellow's complement and leaves a clean neutral.", pt:"violet is yellow's complement"},
   "Pale yellow":  {opts:"Violet Base is pale yellow's complement; very little is needed at this level.", pt:"violet is yellow's complement"} };
 const PT_THEORY={
   "Light Y/G":"yellow leaning green: a cool, matte gold", "Light Y/O":"yellow with a little orange: a warm gold", "Light O/Y":"orange with a little yellow: copper",
