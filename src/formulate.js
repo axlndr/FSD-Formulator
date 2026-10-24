@@ -63,6 +63,26 @@ function componentHex(name){
   if(name==="Bright Base" || /N\/N$/.test(name)) return null; // lightening booster / coverage: no tint
   const node=[...RINGS.light,...RINGS.dark,...PIGMENTS].find(x=>x.name===name); return node?node.hex:null;
 }
+/* ---------- Colour theory for the walkthrough ----------
+   What each NRP needs and what each Deep component does, in plain words. Used to explain the formula, not to choose it. */
+const NRP_THEORY={
+  "Red":          {opts:"Green Base is red's complement and cancels it cleanly; Blue Base would leave red warmth behind.", pt:"green is red's complement"},
+  "Red/orange":   {opts:"Green Base cancels the red side and Blue Base the orange side; Green alone leaves a touch of orange, Blue alone a touch of red, and a combination of the two covers both.", pt:"blue cancels the orange and green or grey cancels the red"},
+  "Orange":       {opts:"Blue Base is orange's complement and gives a clean, cooler result; Violet Base would leave some orange warmth behind.", pt:"blue is orange's complement"},
+  "Yellow/orange":{opts:"Blue Base cancels the orange side and lends a cooler result; Violet Base cancels the yellow side and leaves a little warmth for a softer beige; a combination of Blue and Violet covers both.", pt:"blue cancels the orange and violet cancels the yellow"},
+  "Yellow":       {opts:"Violet Base is yellow's complement and leaves a clean neutral; Blue Base over yellow can drift green.", pt:"violet is yellow's complement"},
+  "Pale yellow":  {opts:"Violet Base is pale yellow's complement; very little is needed at this level.", pt:"violet is yellow's complement"} };
+const PT_THEORY={
+  "Light Y/G":"yellow leaning green: a cool, matte gold", "Light Y/O":"yellow with a little orange: a warm gold", "Light O/Y":"orange with a little yellow: copper",
+  "Light R/R":"true red", "Light R/V":"red leaning violet: a cool, wine red", "Pink (P)":"pink: a soft rose", "Light V/V":"true violet: cancels yellow and reads lilac on pale hair",
+  "Light V/Gr":"violet softened with grey: a cool beige that cancels yellow quietly", "Light B/V":"blue with violet: cancels orange and yellow together for a cool ash", "Light B/B":"true blue: cancels orange and ashes the result",
+  "Light B/Gr":"blue softened with grey: a smoky ash that cancels orange", "Grey (Gr)":"grey: mutes and cools without a visible colour", "Light G/G":"true green: cancels red and reads matte",
+  "Dark G/Y":"green with yellow: a matte olive", "Dark Y/O":"yellow with orange: a deep gold", "Dark O/R":"orange with red: a deep copper", "Dark R/R":"true red at depth", "Dark R/V":"red with violet: a deep wine",
+  "Dark Gr/B":"grey with blue: a smoky ash that cancels orange at depth", "Dark G/Gr":"green with grey: a muted matte that cancels red quietly", "Dark G/B":"green with blue: cancels red and orange together, a deep matte ash",
+  "Pure Red":"pure red pigment: a vivid red", "Pure Orange":"pure orange pigment: a vivid copper", "Pure Pink":"pure pink pigment: a vivid rose", "Pure Violet":"pure violet pigment: a vivid cool", "Pure Blue":"pure blue pigment: a vivid ash", "Pure Green":"pure green pigment: a vivid matte",
+  "Light N/N":"Natural/Natural: the coverage tone, no reflection", "Dark N/N":"Natural/Natural: the coverage tone, no reflection" };
+const ptWhy=name=>PT_THEORY[name]||"";
+
 /* ---------- Botanical Repair™ colour treatment ----------
    From the Aveda Hair Color Professional Reference Guide (9.12.25), bond-building and strengthening colour treatment
    guidelines: recommended with every colour service. Porosity decides how firmly the pre-treatment is worded;
@@ -186,7 +206,7 @@ export function formulate(inp){
   /* Walkthrough for teaching: the deck's own order (natural level, desired level, shade, Pure Tone or base with the NRP
      neutralized or enhanced, Catalyst), one or two short sentences per step, filled in with this formula's numbers. */
   const teach=(r)=>{
-    const L=[]; const lo=x=>x.toLowerCase(); const tName0=t.name.replace(/ \(.*\)/,""); const liftN=d-n;
+    const L=[]; const lo=x=>x.toLowerCase(); const tName0=(t.blend&&blend.preset&&PRESETS[blend.preset])?PRESETS[blend.preset].name:t.blend?"custom tone":t.name.replace(/ \(.*\)/,""); const liftN=d-n;
     L.push(`<b>Natural level.</b> The guest is a natural level ${n}.`);
     L.push(`<b>Desired level.</b> They want a level ${d}${liftN>0?`, a lift of ${liftN} level${liftN>1?"s":""}`:liftN===0?", so this is deposit only":`, going ${-liftN} level${-liftN>1?"s":""} darker`}.`+
       (tex>0?` Curl pattern ${tex===0.5?"2B–3B reads about half a level":"3C–4C reads about a level"} darker, so we formulate for ${dAdj}.`:""));
@@ -202,7 +222,7 @@ export function formulate(inp){
       const gNeut=NEUT_PT[nrp]&&NEUT_PT[nrp][isLight?"light":"dark"];
       L.push(`<b>Grey coverage.</b> ${t.none&&plan!=="split"?`${nnName} at the shade's standard amount covers the grey.`:t.none?`${nnName} takes half the Pure Tone amount for coverage.`:`The Pure Tone amount is split between ${nnName} for coverage and ${ptName||"the reflection"} for the ${lo(tName0)} reflection.`} ${cov==="max"?"Maximum coverage: Catalyst 1:2 on the Natural Series only.":"Natural coverage: Catalyst 1:2 on all the colour."}`);
       const nrpLine=`${gy>=90?"Even hair this grey":"The pigmented hair"} still exposes ${lo(nrp)} at level ${d}${gy>=90?" (and grey itself contributes pale yellow)":""}${d<=n?", though with no lift very little of it shows":""}.`;
-      const what = plan==="base" ? `${BASE_FOR_NRP(d)} replaces 5 g of the shade to neutralize it${gCovers?`, and ${ptName} reinforces that as its complement`:""}.`
+      const what = plan==="base" ? `${BASE_FOR_NRP(d)} replaces 5 g of the shade to neutralize it${gCovers?`, and ${ptName} reinforces that as its complement`:""}. ${(NRP_THEORY[nrp]||{}).opts||""}`
         : plan==="split" ? `${gNeut} takes a share of the Pure Tone amount to neutralize it.`
         : temp==="warm" ? `${tName0} is a warm tone, so the NRP is enhanced rather than neutralized.`
         : gCovers ? `${tName0} is its complement, so the reflection neutralizes it.`
@@ -211,16 +231,28 @@ export function formulate(inp){
     }
     else if(t.ctrl) L.push(`<b>NRP.</b> At level ${d} the hair exposes ${lo(nrp)}. ${BASE_FOR_NRP(d)} is its complement, so 5 g of it replaces 5 g of the shade for a neutral result.`);
     else if(!t.vibrant && !t.baseOnly){
-      const nrpLine=`At level ${d} the hair exposes ${lo(nrp)} NRP${exposure==="none"?" (no lift, so very little of it)":""}.`;
-      const what = plan==="base" ? `${tName0} is a ${temp} tone, so the NRP is neutralized: ${BASE_FOR_NRP(d)} replaces 5 g of the shade.`
-        : plan==="split" ? `${tName0} is a cool tone, so the NRP is neutralized with ${neutPT} (half the Pure Tone amount) and the other half goes to ${ptName} for the reflection.`
-        : plan==="neut" ? `A neutral result, so the NRP is neutralized with ${neutPT}, its complement.`
-        : t.bare ? `No tone was chosen, so the shade goes on alone. The NRP is not neutralized here; the alternative replaces 5 g of the shade with ${BASE_FOR_NRP(d)}.`
-        : temp==="warm" ? `${tName0} is a warm tone, so the NRP is enhanced: nothing is neutralized.`
-        : `${tName0} is complementary to the NRP, so the Pure Tone itself neutralizes it.`;
-      L.push(`<b>NRP.</b> ${nrpLine} ${what}`);
+      const th=NRP_THEORY[nrp]||{opts:"",pt:""}; const baseN=BASE_FOR_NRP(d);
+      const exposed=`At level ${d} the hair exposes ${lo(nrp)} NRP${exposure==="none"?" — with no lift, very little of it comes through":""}.`;
+      let intent, chosen;
+      if(t.bare){ intent=`No tone was chosen, so the shade goes on alone and the ${lo(nrp)} is left as it is.`; chosen=`To neutralize it, the alternative replaces 5 g of the shade with ${baseN}.`; }
+      else if(plan==="base"){
+        intent = temp==="neutral" ? `A neutral result means the ${lo(nrp)} has to be fully neutralized.` : temp==="cool" ? `A ${lo(tName0)} result is cool, so the ${lo(nrp)} has to be neutralized before the cool reflection can read true.` : `${tName0} over ${lo(nrp)} would read too orange, so the NRP is refined (partly neutralized) first.`;
+        chosen = `${baseN} replaces 5 g of the shade: ${th.opts}`; }
+      else if(plan==="split"){ intent=`A ${lo(tName0)} result is cool, so the ${lo(nrp)} is neutralized and the reflection added on top.`; chosen=`Half of the Pure Tone amount goes to ${neutPT} — ${th.pt} — and half to ${ptName} for the reflection.`; }
+      else if(plan==="neut"){ intent=`A neutral result means the ${lo(nrp)} has to be fully neutralized.`; chosen=`${neutPT} does it: ${th.pt}. ${th.opts.replace(/^(\w+ Base)/,"With a base instead, $1")}`; }
+      else if(temp==="warm"){ intent=`${tName0} is a warm result in the same family as the ${lo(nrp)}, so the NRP is enhanced rather than fought.`; chosen=`Nothing is neutralized; the Pure Tone builds on the warmth the hair already has.`; }
+      else { intent=`A ${lo(tName0)} result sits opposite the ${lo(nrp)} on the colour wheel, so the reflection neutralizes it as it tones.`; chosen=`${ptName||"The Pure Tone"} is the neutralizer and the reflection at once: ${ptWhy(ptName)}.`; }
+      L.push(`<b>NRP.</b> ${exposed} ${intent} ${chosen}`);
     }
-    if(ptStd>0 && !t.bare && !t.baseOnly && !t.ctrl && !(gy>0 && t.none)) L.push(`<b>Pure Tone.</b> ${shadeLabel} takes ${g(ptStd)} of Pure Tone per 20 g${t.vibrant?" on Red Base":""}, so ${r.rows.filter(x=>!/N$|Base$/.test(x[1])).map(x=>`${x[0]} ${x[1]}`).join(" + ")||"that amount"} for the ${lo(tName0)} reflection.${k!==1?` The variables make this a ${k>1?"strong formula: 50% more":"soft formula: 50% less"} Pure Tone.`:""}`);
+    if(ptStd>0 && !t.bare && !t.baseOnly && !t.ctrl && !(gy>0 && t.none)){
+      const comps=r.rows.filter(x=>!/\dN$|Base$/.test(x[1]) && !/N\/N$/.test(x[1]));
+      const parts=comps.map(x=>`${x[0]} ${x[1]} (${ptWhy(x[1])})`);
+      const how = comps.length>1 && t.blend ? ` Together they build the ${lo(tName0)}: ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(", ")} — the larger share sets the direction and the smaller shares shift it.`
+        : comps.length>1 ? ` The ${neutPT&&comps.some(x=>x[1]===neutPT)?"first cancels the NRP and the second":"two together"} create${comps.length>1?"":"s"} the ${lo(tName0)} reflection.`
+        : comps.length===1 ? ` That is what gives the ${lo(tName0)} reflection.` : "";
+      if(comps.length===0) L.push(`<b>Pure Tone.</b> None in this formula: the result is neutral, so the base does the work. ${shadeLabel} would take ${g(ptStd)} of Pure Tone per 20 g if you want a reflection on top.`);
+      else L.push(`<b>Pure Tone.</b> ${shadeLabel} takes ${g(ptStd)} of Pure Tone per 20 g${t.vibrant?" on Red Base":""}: the lighter the shade, the less it needs. Here: ${parts.join("; ")}.${how}${k!==1?` The variables make this a ${k>1?"strong formula, so 50% more":"soft formula, so 50% less"} Pure Tone.`:""}`);
+    }
     L.push(`<b>Color Catalyst.</b> ${lifting?"Going lighter: 20 Volume, 30 minutes":"Going darker: 5 or 10 Volume, 20 minutes"}${dev.v!==(lifting?20:10)?`; the variables moved it to ${devLabel(dev.v)}`:dev.capped?`; the variables asked for more, but 20 Volume is the maximum on the scalp`:""}. Mixed 1:2 with the colour: ${r.dev}.`);
     L.push(`<b>Botanical Repair™.</b> ${r.additive?r.additive[0]+" ":""}Hair Strengthening Additive goes into every colour formula (8 g per 40 g).`);
     return L; };
