@@ -1,5 +1,5 @@
 // Pure formulation logic: inputs in, formula out. No DOM access, so it can be tested on its own.
-import { GRID, shadeFor, DERIVED, PT_GRAMS, NRP, BASE_FOR_NRP, NEUT_PT, COUNTERS, TEMP, TONES,
+import { GRID, shadeFor, DERIVED, PT_GRAMS, NRP, BASE_FOR_NRP, BASE_PAIR_FOR_NRP, NEUT_PT, COUNTERS, TEMP, TONES,
          RINGS, ringFor, WARM_KEYS, PRESETS, PRESET_WHY, PIGMENTS, PT_FAM, pigScale } from "./data.js";
 
 /* ---------- Developer ---------- */
@@ -66,12 +66,12 @@ function componentHex(name){
 /* ---------- Colour theory for the walkthrough ----------
    What each NRP needs and what each Deep component does, in plain words. Used to explain the formula, not to choose it. */
 const NRP_THEORY={
-  "Red":          {opts:"Green Base is red's complement and cancels it cleanly.", pt:"green is red's complement"},
-  "Red/orange":   {opts:"Green Base cancels the red side of it; expect a touch of orange to remain, which the Natural Series shade and Pure Tone finish.", pt:"blue cancels the orange and green or grey cancels the red"},
-  "Orange":       {opts:"Blue Base is orange's complement and gives a clean, cooler result.", pt:"blue is orange's complement"},
-  "Yellow/orange":{opts:"Blue Base cancels the orange side of it and lends a cooler result.", pt:"blue cancels the orange and violet cancels the yellow"},
-  "Yellow":       {opts:"Violet Base is yellow's complement and leaves a clean neutral.", pt:"violet is yellow's complement"},
-  "Pale yellow":  {opts:"Violet Base is pale yellow's complement; very little is needed at this level.", pt:"violet is yellow's complement"} };
+  "Red":          {single:"Green Base helps control the red NRP and supports a neutral result.", pair:"", pt:"green is red's complement"},
+  "Red/orange":   {single:"Green Base helps control the red in the NRP and supports a neutral result.", pair:"Green Base and Blue Base together help control both the red and the orange in the NRP and support a neutral result.", pt:"blue helps control the orange and green or grey the red"},
+  "Orange":       {single:"Blue Base helps control the orange NRP and supports a cooler result.", pair:"", pt:"blue is orange's complement"},
+  "Yellow/orange":{single:"Blue Base helps control the orange in the NRP and supports a cooler result.", pair:"Blue Base and Violet Base together help control both the orange and the yellow in the NRP and support a neutral result.", pt:"blue helps control the orange and violet the yellow"},
+  "Yellow":       {single:"Violet Base helps control the yellow NRP and supports a clean, neutral result.", pair:"", pt:"violet is yellow's complement"},
+  "Pale yellow":  {single:"Violet Base helps control the pale yellow NRP; very little is needed at this level.", pair:"", pt:"violet is yellow's complement"} };
 const PT_THEORY={
   "Light Y/G":"yellow leaning green: a cool, matte gold", "Light Y/O":"yellow with a little orange: a warm gold", "Light O/Y":"orange with a little yellow: copper",
   "Light R/R":"true red", "Light R/V":"red leaning violet: a cool, wine red", "Pink (P)":"pink: a soft rose", "Light V/V":"true violet: cancels yellow and reads lilac on pale hair",
@@ -227,7 +227,7 @@ export function formulate(inp){
       const gNeut=NEUT_PT[nrp]&&NEUT_PT[nrp][isLight?"light":"dark"];
       L.push(`<b>Grey coverage.</b> ${t.none&&plan!=="split"?`${nnName} at the shade's standard amount covers the grey.`:t.none?`${nnName} takes half the Pure Tone amount for coverage.`:`The Pure Tone amount is split between ${nnName} for coverage and ${ptName||"the reflection"} for the ${lo(tName0)} reflection.`} ${cov==="max"?"Maximum coverage: Catalyst 1:2 on the Natural Series only.":"Natural coverage: Catalyst 1:2 on all the colour."}`);
       const nrpLine=`${gy>=90?"Even hair this grey":"The pigmented hair"} still exposes ${lo(nrp)} at level ${d}${gy>=90?" (and grey itself contributes pale yellow)":""}${d<=n?", though with no lift very little of it shows":""}.`;
-      const what = plan==="base" ? `${BASE_FOR_NRP(d)} replaces 5 g of the shade to neutralize it${gCovers?`, and ${ptName} reinforces that as its complement`:""}. ${(NRP_THEORY[nrp]||{}).opts||""}`
+      const what = plan==="base" ? `${BASE_FOR_NRP(d)} replaces 5 g of the shade. ${(NRP_THEORY[nrp]||{}).single||""}${gCovers?` ${ptName} reinforces that as its complement.`:""}`
         : plan==="split" ? `${gNeut} takes a share of the Pure Tone amount to neutralize it.`
         : temp==="warm" ? `${tName0} is a warm tone, so the NRP is enhanced rather than neutralized.`
         : gCovers ? `${tName0} is its complement, so the reflection neutralizes it.`
@@ -236,13 +236,14 @@ export function formulate(inp){
     }
     else if(t.ctrl) L.push(`<b>NRP.</b> At level ${d} the hair exposes ${lo(nrp)}. ${BASE_FOR_NRP(d)} is its complement, so 5 g of it replaces 5 g of the shade for a neutral result.`);
     else if(!t.vibrant && !t.baseOnly){
-      const th=NRP_THEORY[nrp]||{opts:"",pt:""}; const baseN=BASE_FOR_NRP(d);
+      const th=NRP_THEORY[nrp]||{single:"",pair:"",pt:""}; const baseN=BASE_FOR_NRP(d); const inRows=r.rows.filter(x=>/Base$/.test(x[1])&&x[1]!=="Red Base"&&x[1]!=="Bright Base").map(x=>x[1]);
+      const baseSentence = inRows.length>1 ? th.pair : th.single; const baseLabel = inRows.length>1 ? `${inRows[0]} and ${inRows[1]} (2.5 g each) replace` : `${baseN} replaces`;
       const exposed=`At level ${d} the hair exposes ${lo(nrp)} NRP${exposure==="none"?" — with no lift, very little of it comes through":""}.`;
       let intent, chosen;
       if(t.bare){ intent=`No tone was chosen, so the shade goes on alone and the ${lo(nrp)} is left as it is.`; chosen=`To neutralize it, the alternative replaces 5 g of the shade with ${baseN}.`; }
       else if(plan==="base"){
-        intent = temp==="neutral" ? `A neutral result means the ${lo(nrp)} has to be fully neutralized.` : temp==="cool" ? `A ${lo(tName0)} result is cool, so the ${lo(nrp)} has to be neutralized before the cool reflection can read true.` : `${tName0} over ${lo(nrp)} would read too orange, so the NRP is refined (partly neutralized) first.`;
-        chosen = `${baseN} replaces 5 g of the shade: ${th.opts}`; }
+        intent = temp==="neutral" ? `A neutral result means the ${lo(nrp)} has to be neutralized.` : temp==="cool" ? `A ${lo(tName0)} result is cool, so the ${lo(nrp)} has to be neutralized before the cool reflection can be visible.` : `${tName0} over ${lo(nrp)} would read too orange, so the NRP is refined (partly neutralized) first.`;
+        chosen = `${baseLabel} 5 g of the shade. ${baseSentence}`; }
       else if(plan==="split"){ intent=`A ${lo(tName0)} result is cool, so the ${lo(nrp)} is neutralized and the reflection added on top.`; chosen=`Half of the Pure Tone amount goes to ${neutPT} — ${th.pt} — and half to ${ptName} for the reflection.`; }
       else if(plan==="neut"){ intent=`A neutral result means the ${lo(nrp)} has to be fully neutralized.`; chosen=`${neutPT} does it: ${th.pt}.`; }
       else if(temp==="warm"){ intent=`${tName0} is a warm result in the same family as the ${lo(nrp)}, so the NRP is enhanced rather than fought.`; chosen=`Nothing is neutralized; the Pure Tone builds on the warmth the hair already has.`; }
@@ -379,6 +380,11 @@ export function formulate(inp){
   if(t.blend) why.push(`Blend: ${blend.preset?`${PRESETS[blend.preset].name} (recipe: ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(", ")}, ${PRESETS[blend.preset].nrp==="enhance"?"enhances":"neutralizes"} the NRP)`:`custom, ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(" + ")} from the wheel position`}${blend.k!=null?`; distance from the centre sets the Pure Tone at ${Math.round(k*100)}% of the shade's amount${pigF>0&&pigF<2?` with Pure Pigment at ${Math.round(pigF*100)}%`:pigF>=2?" and the rim swaps in Pure Pigment at 200%":""}`:""}.`);
   const neutPT = NEUT_PT[nrp][isLight?"light":"dark"];
   const base=BASE_FOR_NRP(d);
+  const pair=BASE_PAIR_FOR_NRP(nrp);
+  // A pair of bases (2.5 g each) when the NRP has two sides and the result should be neutral, or when asked for in Advanced.
+  let usePair=false;
+  const baseRows=()=> usePair && pair ? pair.map(b=>[g(2.5*mult),b]) : [[g(5*mult),base]];
+  const baseText=()=> usePair && pair ? `${pair[0]} and ${pair[1]} (2.5 g each)` : base;
   // plan: "none" | "base" | "split" (neutralizer + reflection) | "neut" (neutralizer alone)
   if(t.bare){ plan="none"; reason=`No reflective tone chosen: the ${shadeLabel} Natural Series shade goes on alone. The ${nrp.toLowerCase()} NRP is not neutralized; the alternative replaces 5 g of the shade with ${base}.`; }
   else if(exposure==="none" || mode==="chart" || mode==="enhance"){
@@ -386,10 +392,11 @@ export function formulate(inp){
     reason = exposure==="none" ? `No lift, so no NRP is exposed; the ${shadeLabel} cool-brown base deposits over the existing level.`
            : mode==="chart" ? "Chart formula as printed; NRP left to the Natural Series base." : `Enhancing: the ${nrp.toLowerCase()} NRP is allowed to show through the reflection.`;
   } else if(mode==="base"){ plan="base"; reason=`Forced: ${base} 5 g + 15 g Natural Series to neutralize ${nrp.toLowerCase()}.`; }
+  else if(mode==="pair"){ plan="base"; usePair=!!pair; reason=`Forced: ${baseText()} + 15 g Natural Series to neutralize ${nrp.toLowerCase()}.`; }
   else if(mode==="pt"){ plan = t.none ? "neut" : covers ? "none" : "split"; reason=`Forced: neutralize ${nrp.toLowerCase()} with Pure Tone${plan==="none"?` (the ${tName} reflection already counters it)`:""}.`; }
   else { // auto
     if(temp==="neutral"){
-      plan="base"; ptPlan="neut";
+      plan="base"; ptPlan="neut"; usePair=!!pair;
       reason = exposure==="strong" ? `Neutral result: ${lift} levels of lift exposes ${nrp.toLowerCase()} strongly, so ${base} replaces 5 g of the shade to neutralize it.`
              : `Neutral result: ${lift} level${lift>1?"s":""} of lift exposes ${nrp.toLowerCase()}; ${base} replaces 5 g of the shade to neutralize it (Pure Tone route shown as the alternative).`;
     } else if(temp==="cool"){
@@ -406,7 +413,7 @@ export function formulate(inp){
   if(plan==="base"){
     rows.length=0;
     if(split) shades.forEach(s=>rows.push([g(7.5*mult),s+"N"])); else rows.push([g(15*mult),baseName[0]]);
-    rows.push([g(5*mult),base]);
+    rows.push(...baseRows());
   }
   if(t.none){
     if(ptStd===0 && !split){ if(plan==="neut"){ plan="none"; warn="2N is not recommended for customization, so no neutralizing Pure Tone is added; the shade's cool-brown base carries the result."; } }

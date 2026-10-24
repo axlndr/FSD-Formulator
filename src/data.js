@@ -22,6 +22,8 @@ export const DERIVED = n => n>=7;
 export const PT_GRAMS = {14:2,12:2,7:2,10:4,6:4,9:6,5:6,8:8,4:8,2:0}; // per 20 g, standard
 export const NRP = {10:["Pale yellow","Violet"],9:["Yellow","Violet"],8:["Yellow/orange","Blue/violet"],7:["Orange","Blue"],6:["Red/orange","Blue/green"],5:["Red","Green"],4:["Red","Green"],3:["Red","Green"],2:["Red","Green"],1:["Red","Green"]};
 export const BASE_FOR_NRP = dl => dl>=9 ? "Violet Base" : dl>=7 ? "Blue Base" : "Green Base";
+// Two-part NRPs can be controlled with a pair of bases, 2.5 g each: red/orange with Green + Blue, yellow/orange with Blue + Violet.
+export const BASE_PAIR_FOR_NRP = nrp => nrp==="Red/orange" ? ["Green Base","Blue Base"] : nrp==="Yellow/orange" ? ["Blue Base","Violet Base"] : null;
 // Neutralizing Pure Tone by NRP, light (8N–14N) and dark (4N–7N) shades.
 export const NEUT_PT = {
   "Red":          {light:"Light G/G",  dark:"Dark G/B"},

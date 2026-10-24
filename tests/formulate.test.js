@@ -62,8 +62,8 @@ test("Pure Tone standard amounts: 14/12/7 → 2 g, 10/6 → 4 g, 9/5 → 6 g, 8/
 
 /* ---------- NRP handling ---------- */
 test("neutral result at moderate lift: controlling base, with the neutralizing Pure Tone as the alternative", () => {
-  const r = run({ nl:"4", dl:"6", tone:"natural" });
-  assert.deepEqual(rows(r), ["15 g 8N", "5 g Green Base"]);
+  const r = run({ nl:"4", dl:"6", tone:"natural" }); // red/orange at 6: a neutral result takes the Green + Blue pair
+  assert.deepEqual(rows(r), ["15 g 8N", "2.5 g Green Base", "2.5 g Blue Base"]);
   assert.deepEqual(rows(r.alt), ["20 g 8N", "8 g Light B/Gr"]);
 });
 test("neutral result at strong lift: controlling base; the Pure Tone route is offered as a secondary option", () => {
@@ -71,10 +71,12 @@ test("neutral result at strong lift: controlling base; the Pure Tone route is of
   assert.deepEqual(rows(r), ["15 g 10N", "5 g Blue Base"]);
   assert.ok(r.alt && /recommended route/.test(r.alt.sub));
 });
-test("controlling base follows the NRP at the desired level: Green ≤6, Blue 7–8, Violet 9–10", () => {
-  has(run({ nl:"3", dl:"6", tone:"natural" }), "5 g Green Base");
-  has(run({ nl:"4", dl:"8", tone:"natural" }), "5 g Blue Base");
+test("controlling base follows the NRP at the desired level: Green ≤6, Blue 7–8, Violet 9–10 (pairs for the two-part NRPs on a neutral result)", () => {
+  has(run({ nl:"3", dl:"5", tone:"natural" }), "5 g Green Base");
+  has(run({ nl:"4", dl:"7", tone:"natural" }), "5 g Blue Base");
   has(run({ nl:"6", dl:"10", tone:"natural" }), "5 g Violet Base");
+  has(run({ nl:"3", dl:"6", tone:"blueash" }), "5 g Green Base"); // cool result at a two-part NRP keeps the single base
+  has(run({ nl:"4", dl:"8", tone:"blueash" }), "5 g Blue Base");
 });
 test("a cool reflection at strong lift gets the base plus the reflection at standard (6 → 10 Beige Ash)", () => {
   const r = run({ nl:"6", dl:"10", tone:"beigeash" });
@@ -252,4 +254,18 @@ test("grey with lift: NRP is named in the walkthrough; warm tones enhance, cool 
 
 test("every Custom preset has a written explanation", () => {
   for(const k of Object.keys(PRESETS)) assert.ok(PRESET_WHY[k] && PRESET_WHY[k].length>20, k);
+});
+
+test("two-part NRPs: a neutral result uses a pair of bases, 2.5 g each; Advanced can force the pair", () => {
+  const base={grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
+  const r8=formulate({...base,nl:"5",dl:"8",tone:"natural"});
+  assert.deepEqual(r8.rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Blue Base"],["2.5 g","Violet Base"]]);
+  const r6=formulate({...base,nl:"3",dl:"6",tone:"natural"});
+  assert.deepEqual(r6.rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Green Base"],["2.5 g","Blue Base"]]);
+  const cool=formulate({...base,nl:"5",dl:"8",tone:"blueash"}); // cool result keeps the single base
+  assert.deepEqual(cool.rows.filter(x=>/Base$/.test(x[1])),[["5 g","Blue Base"]]);
+  const forced=formulate({...base,nl:"5",dl:"8",tone:"blueash",nrpMode:"pair"});
+  assert.deepEqual(forced.rows.filter(x=>/Base$/.test(x[1])),[["2.5 g","Blue Base"],["2.5 g","Violet Base"]]);
+  const r7=formulate({...base,nl:"5",dl:"7",tone:"natural"}); // orange has one complement
+  assert.deepEqual(r7.rows.filter(x=>/Base$/.test(x[1])),[["5 g","Blue Base"]]);
 });
