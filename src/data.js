@@ -201,7 +201,7 @@ export const PRESET_WHY={
   steel:"B/B is the blue; Grey mutes it to a cool, metallic steel.",
   mushroom:"Equal Grey and V/Gr: a muted, cool beige-grey with a hint of violet, like a mushroom cap.",
   smoky:"B/Gr and V/Gr build a cool smoke; Pure Violet adds a faint purple cast through it.",
-  sable:"B/Gr cools and cancels orange; Y/O adds just enough warmth that the dark brown reads soft and furry, not ash.",
+  sable:"B/Gr cools and cancels orange; Y/O adds just enough warmth that the dark brown reads soft and rich, not ash.",
   ginger:"O/Y is the copper; Y/O lightens it toward gold for a bright, spicy ginger.",
   terracotta:"O/Y is the copper, R/R deepens it toward red, and Y/O keeps a clay-like warmth.",
   garnet:"R/R is the red; Pure Red intensifies it and R/V cools it slightly toward a jewel tone.",
