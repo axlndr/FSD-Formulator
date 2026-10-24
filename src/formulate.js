@@ -87,23 +87,23 @@ const ptWhy=name=>PT_THEORY[name]||"";
    From the Aveda Hair Color Professional Reference Guide (9.12.25), bond-building and strengthening color treatment
    guidelines: recommended with every color service. Porosity decides how firmly the pre-treatment is worded;
    texture and density pick the Bond Activator. */
-export const ADDITIVE="Botanical Repair™ Hair Strengthening Additive";
+export const ADDITIVE="Botanical Repair™ Professional Hair Strengthening Additive";
 export function additiveFor(rows){ const colourG=rows.reduce((a,r)=>a+parseFloat(r[0]),0); const gAdd=Math.round(colourG*8/40*2)/2; return gAdd>0 ? [g(gAdd), ADDITIVE] : null; }
 export function treatmentPlan(inp, rows, mult){
   const por=inp.porosity||"", tex=inp.htype||"", den=inp.density||"";
   const colourG=rows.reduce((a,r)=>a+parseFloat(r[0]),0); // every color component, before Catalyst
   const additive=Math.round(colourG*8/40*2)/2;
   const rich = tex==="1" || den==="1"; const light = tex==="-1" || (tex==="0" && den!=="1");
-  const activator = rich && !light ? "Rich" : light && !rich ? "Light" : "Light or Rich";
+  const activator = rich && !light ? "Rich" : light && !rich ? "Light" : "Light / Rich";
   const steps=[];
   const primerWhy = por==="compromised" ? "required: equalizes porosity so compromised hair takes color evenly" : por==="high" ? "required: equalizes porosity for even deposit" : por==="low" ? "optional on low porosity; it conditions and primes" : "equalizes porosity for even deposit";
   steps.push(`Spray 5 ml Botanical Repair™ Professional Equalizing Primer on dry hair and comb through (${primerWhy}). Blow-dry in if desired.`);
   steps.push(`Mix the ${additive} g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the ${Math.round(colourG)} g of color (8 g per 40 g).`);
   steps.push("Apply and process as formulated, at room temperature. No heat.");
   steps.push("Rinse and shampoo with Botanical Repair™ Strengthening Shampoo.");
-  steps.push(`Apply 20 g Botanical Repair™ Professional Bond Activator ${activator}${activator==="Light or Rich"?" (Light for fine-to-medium, Rich for medium-to-thick)":""}, process 10 minutes and rinse.`);
+  steps.push(`Apply 20 g Botanical Repair™ Professional Bond Activator: ${activator}${activator==="Light / Rich"?" (Light for fine-to-medium hair, Rich for medium-to-thick)":""}. Process 10 minutes and rinse.`);
   const level = (por==="compromised"||por==="high") ? "highly recommended" : "recommended";
-  const lead = por==="compromised" ? "Highly recommended on compromised hair: the primer equalizes porosity so color deposits evenly, the additive rebuilds bonds while the color processes, and the activator restores strength and reduces breakage after. Consider the Restorative Treatment as a separate service first." : por==="high" ? "Highly recommended on high-porosity hair: the primer equalizes porosity so color deposits evenly instead of grabbing at the porous areas, and the additive and activator protect the hair through the service." : "Aveda recommends the bond-building and strengthening color treatment with every color service (adds about 15 minutes).";
+  const lead = por==="compromised" ? "Highly recommended on compromised hair: the primer equalizes porosity so color deposits evenly, the additive rebuilds bonds while the color processes, and the activator restores strength and reduces breakage after. Consider the Bond-Building and Strengthening Restorative Treatment as a separate service first." : por==="high" ? "Highly recommended on high-porosity hair: the primer equalizes porosity so color deposits evenly instead of grabbing at the porous areas, and the additive and activator protect the hair through the service." : "Aveda recommends the bond-building and strengthening color treatment with every color service (adds about 15 minutes).";
   return {level, lead, steps};
 }
 export function predictHex({n,d,nrp,rows}){
@@ -163,7 +163,7 @@ export function formulate(inp){
   let kAuto=kBase; const bumps=[];
   if(kAuto===0.5 && d-n>=3){ kAuto=1; bumps.push("a strong lift (3+ levels) bumps soft to standard"); }
   if(dev.requested>20 && kAuto<1.5){ kAuto+=0.5; bumps.push(`a developer need above 20 Volume bumps ${kAuto===1?"soft to standard":"standard to strong"}`); }
-  let k = strength==="auto" ? kAuto : Math.min(1.5,+strength);
+  let k = strength==="auto" ? kAuto : strength==="2" ? 1 : Math.min(1.5,+strength); // Intense: Pure Tone at the recommended amount, plus half that amount of Pure Pigment
   if(t.blend && blend.k!=null && strength==="auto") k=blend.k;
   const recipeK = (t.blend && blend.preset && blend.k==null && strength==="auto" && PRESETS[blend.preset].k) ? PRESETS[blend.preset].k : null;
   if(recipeK) k=recipeK;
@@ -176,7 +176,7 @@ export function formulate(inp){
   if(strength==="auto"){ const lbl=v=>v>1?"strong":v<1?"soft":"standard"; const vars=[inp.texture,inp.htype,inp.density].some(x=>x!==""&&x!=null);
     if(vars||bumps.length) why.push(`Formula strength: hair variables average to ${lbl(kBase)}${bumps.length?`; ${bumps.join(", ")}`:""} → ${lbl(k)}${k!==1?` (${k>1?"50% more":"50% less"} Pure Tone)`:""}.`); }
   const [nrp,comp]=NRP[d];
-  const common={status:"ok", n, d, nrpText:`${nrp} · neutralize with ${comp.toLowerCase()}`, stripe:{from:levelHex(n), to:t.hex||levelHex(d)}, nrpName:nrp,
+  const common={status:"ok", n, d, nrpText:`${nrp} · complement ${comp.toLowerCase()}`, stripe:{from:levelHex(n), to:t.hex||levelHex(d)}, nrpName:nrp,
     dir: d>n?`Lift ${d-n} level${d-n>1?"s":""}`:(d===n?"Same level (deposit)":`Deposit, ${n-d} level${n-d>1?"s":""} darker`),
     sub:`Natural ${n} → level ${d}, ${t.name.replace(/ \(.*\)/,"")}`, showCov: gy>0, isLight:true, k, blendList:null};
 
@@ -222,61 +222,86 @@ export function formulate(inp){
   /* Walkthrough for teaching: the deck's own order (natural level, desired level, shade, Pure Tone or base with the NRP
      neutralized or enhanced, Catalyst), one or two short sentences per step, filled in with this formula's numbers. */
   const teach=(r)=>{
-    const L=[]; const lo=x=>x.toLowerCase(); const tName0=(t.blend&&blend.preset&&PRESETS[blend.preset])?PRESETS[blend.preset].name:t.blend?"custom tone":t.name.replace(/ \(.*\)/,""); const liftN=d-n;
+    const L=[]; const lo=x=>x.toLowerCase(); const an=w=>/^[aeiou]/i.test(w)?"an":"a"; const nice=nm=>nm.replace(/ \((P|Gr)\)$/,"");
+    const tName0=(t.blend&&blend.preset&&PRESETS[blend.preset])?PRESETS[blend.preset].name:t.blend?"custom tone":t.name.replace(/ \(.*\)/,""); const liftN=d-n;
+    const th=NRP_THEORY[nrp]||{single:"",pair:"",pt:""}; const baseN=BASE_FOR_NRP(d);
+    const inRows=r.rows.filter(x=>/Base$/.test(x[1])&&x[1]!=="Red Base"&&x[1]!=="Bright Base").map(x=>x[1]);
+    const comps=r.rows.filter(x=>!/\dN$|Base$/.test(x[1]) && !/N\/N$/.test(x[1]));
+    const hasNN=r.rows.some(x=>/N\/N$/.test(x[1]));
+    const recipeNeut = t.blend && blend.preset && PRESETS[blend.preset] && PRESETS[blend.preset].nrp==="neutralize";
     L.push(`<b>Natural level.</b> The guest is a natural level ${n}.`);
     L.push(`<b>Desired level.</b> They want a level ${d}${liftN>0?`, a lift of ${liftN} level${liftN>1?"s":""}`:liftN===0?", so this is deposit only":`, going ${-liftN} level${-liftN>1?"s":""} darker`}.`+
       (tex>0?` Curl pattern ${tex===0.5?"2B–3B reads about half a level":"3C–4C reads about a level"} darker, so we formulate for ${dAdj}.`:""));
     if(r.rows.length===0) return L;
     const shadeTxt=shadeLabel+(split?" in equal parts":"");
-    if(t.vibrant) L.push(`<b>Base.</b> Vibrant reds are built on Red Base instead of a Natural Series shade${isLight?", with Bright Base (or 12N) to carry the lift":""}.`);
-    else if(t.baseOnly) L.push(`<b>Base.</b> ${t.baseOnly} is used on its own${isLight?" with 12N for a lighter result":""}; it lifts to about level 7 by itself.`);
+    if(t.vibrant) L.push(`<b>Base.</b> Vibrant reds are built on Red Base instead of a Natural Series shade${isLight?", with Bright Base (or 12N) to carry the lift":""}. Red Base lifts to about level 7 on its own${d<n?`, so it will not deposit down to a level ${d}; for a darker red, use the Natural Series Red/Red family`:""}.`);
+    else if(t.baseOnly) L.push(`<b>Base.</b> ${t.baseOnly} is used on its own${isLight?" with 12N for a lighter result":""}; it lifts to about level 7 by itself${d<n?` and will not deposit down to a level ${d}`:""}.`);
     else if(lifting) L.push(`<b>Natural Series shade.</b> Desired level + (desired level − natural level) = shade: ${dAdj} + ${dAdj-n} = ${2*dAdj-n}, so ${shadeTxt}.`);
     else L.push(`<b>Natural Series shade.</b> Going darker, use the shade one level above the desired level: ${shadeTxt}.`);
     if(DERIVED(n)) L.push(`The chart covers natural levels 1–6; natural ${n} uses the same rule.`);
+    // --- grey coverage ---
     if(gy>0){
-      const gCovers = temp==="cool" && (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp);
+      const gTemp = t.none ? "neutral" : t.blend ? blendTemp(blend,isLight) : TEMP(inp.tone);
+      const gCovers = gTemp==="cool" && (t.blend ? (bl||[]).some(x=>(COUNTERS[x[2]]?.[isLight?"light":"dark"]||[]).includes(nrp)) : (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp));
       const gNeut=NEUT_PT[nrp]&&NEUT_PT[nrp][isLight?"light":"dark"];
-      L.push(`<b>Grey coverage.</b> ${t.none&&plan!=="split"?`${nnName} at the shade's standard amount covers the grey.`:t.none?`${nnName} takes half the Pure Tone amount for coverage.`:`The Pure Tone amount is split between ${nnName} for coverage and ${ptName||"the reflection"} for the ${lo(tName0)} reflection.`} ${cov==="max"?"Maximum coverage: Catalyst 1:2 on the Natural Series only.":"Natural coverage: Catalyst 1:2 on all the color."}`);
+      const cover = hasNN ? (t.none&&plan!=="split" ? `${nnName} at the shade's standard amount covers the grey.` : t.none ? `${nnName} takes half the Pure Tone amount for coverage.` : comps.length ? `The Pure Tone amount is split between ${nnName} for coverage and ${comps.map(x=>nice(x[1])).join(" + ")} for the ${lo(tName0)} reflection.` : `${nnName} covers the grey.`)
+        : t.vibrant ? `Red Base formulas are not charted for grey coverage; expect blending rather than full coverage, and strand test.` : `No N/N is charted here, so expect blending rather than full coverage.`;
+      L.push(`<b>Grey coverage.</b> ${cover}${t.vibrant||t.baseOnly?"":` ${cov==="max"?"Maximum coverage: Catalyst 1:2 on the Natural Series only.":"Natural coverage: Catalyst 1:2 on all the color."}`}`);
       const nrpLine=`${gy>=90?"Even hair this grey":"The pigmented hair"} still exposes ${lo(nrp)} at level ${d}${gy>=90?" (and grey itself contributes pale yellow)":""}${d<=n?", though with no lift very little of it shows":""}.`;
-      const what = plan==="base" ? `${BASE_FOR_NRP(d)} replaces 5 g of the shade. ${(NRP_THEORY[nrp]||{}).single||""}${gCovers?` ${ptName} reinforces that as its complement.`:""}`
+      const what = inRows.length>1 ? `${inRows[0]} and ${inRows[1]} (2.5 g each) replace 5 g of the shade. ${th.pair}`
+        : inRows.length===1 && !t.ctrl ? `${inRows[0]} replaces 5 g of the shade. ${th.single}${gCovers&&comps.length?` ${comps.map(x=>nice(x[1])).join(" + ")} ${comps.length>1?"reinforce":"reinforces"} that as ${comps.length>1?"complements":"its complement"}.`:""}`
+        : t.ctrl ? `${baseN} replaces 5 g of the shade. ${th.single}`
         : plan==="split" ? `${gNeut} takes a share of the Pure Tone amount to neutralize it.`
-        : temp==="warm" ? `${tName0} is a warm tone, so the NRP is enhanced rather than neutralized.`
+        : t.vibrant ? `A vibrant red is warm, so the NRP is enhanced rather than neutralized.`
+        : gTemp==="warm" ? `${tName0} is a warm tone, so the NRP is enhanced rather than neutralized.`
         : gCovers ? `${tName0} is its complement, so the reflection neutralizes it.`
-        : d<=n ? `No neutralizer is needed without lift.` : `It is not neutralized in this formula; see the alternative with ${BASE_FOR_NRP(d)}.`;
+        : d<=n ? `No neutralizer is needed without lift.` : r.alt ? `It is not neutralized in this formula; see the alternative with ${baseN}.` : `It is not neutralized in this formula.`;
       L.push(`<b>NRP.</b> ${nrpLine} ${what}`);
     }
-    else if(t.ctrl) L.push(`<b>NRP.</b> At level ${d} the hair exposes ${lo(nrp)}. ${BASE_FOR_NRP(d)} is its complement, so 5 g of it replaces 5 g of the shade for a neutral result.`);
+    // --- controlling-base tone ---
+    else if(t.ctrl) L.push(`<b>NRP.</b> At level ${d} the hair exposes ${lo(nrp)}. ${baseN} is its complement, so 5 g of it replaces 5 g of the shade for a neutral result.`);
+    // --- every other tone ---
     else if(!t.vibrant && !t.baseOnly){
-      const th=NRP_THEORY[nrp]||{single:"",pair:"",pt:""}; const baseN=BASE_FOR_NRP(d); const inRows=r.rows.filter(x=>/Base$/.test(x[1])&&x[1]!=="Red Base"&&x[1]!=="Bright Base").map(x=>x[1]);
       const baseSentence = inRows.length>1 ? th.pair : th.single; const baseLabel = inRows.length>1 ? `${inRows[0]} and ${inRows[1]} (2.5 g each) replace` : `${baseN} replaces`;
       const exposed=`At level ${d} the hair exposes ${lo(nrp)} NRP${exposure==="none"?" — with no lift, very little of it comes through":""}.`;
+      const coolIntent = recipeNeut ? `${tName0} is built over a neutralized NRP, so the ${lo(nrp)} has to be neutralized before the reflection can be visible.` : `${an(tName0)[0].toUpperCase()+an(tName0).slice(1)} ${lo(tName0)} result is cool, so the ${lo(nrp)} has to be neutralized before the cool reflection can be visible.`;
       let intent, chosen;
-      if(t.bare){ intent=`No tone was chosen, so the shade goes on alone and the ${lo(nrp)} is left as it is.`; chosen=`To neutralize it, the alternative replaces 5 g of the shade with ${baseN}.`; }
+      if(t.bare){ intent=`No tone was chosen, so the shade goes on alone and the ${lo(nrp)} is left as it is.`; chosen = r.alt ? `To neutralize it, the alternative replaces 5 g of the shade with ${baseN}.` : (exposure==="none" ? `With no lift there is little to neutralize.` : `Choose a controlling base in Advanced to neutralize it.`); }
       else if(plan==="base"){
-        intent = temp==="neutral" ? `A neutral result means the ${lo(nrp)} has to be neutralized.` : temp==="cool" ? `A ${lo(tName0)} result is cool, so the ${lo(nrp)} has to be neutralized before the cool reflection can be visible.` : `${tName0} over ${lo(nrp)} would read too orange, so the NRP is refined (partly neutralized) first.`;
-        chosen = `${baseLabel} 5 g of the shade. ${baseSentence}${temp==="cool"&&pair&&inRows.length===1&&mode==="auto"?` ${baseN} is the dominant of the pair (${baseN==="Green Base"?"green over blue":"blue over violet"}), so it is used alone for the ashiest ${lo(tName0)}.`:""}`; }
-      else if(plan==="split"){ intent = temp==="cool" ? `A ${lo(tName0)} result is cool, so the ${lo(nrp)} is neutralized and the reflection added on top.` : `Neutralizing with Pure Tones was chosen, so the ${lo(nrp)} is neutralized and the ${lo(tName0)} reflection added on top.`;
-        chosen = ptName ? `Half of the Pure Tone amount goes to ${neutPT} — ${th.pt} — and half to ${ptName} for the reflection.` : `${neutPT} takes half the Pure Tone amount — ${th.pt}. ${tName0} has no ${isLight?"Light":"Dark"} Pure Tone at this shade, so there is no reflection to add.`; }
+        intent = temp==="neutral" ? `A neutral result means the ${lo(nrp)} has to be neutralized.` : temp==="cool" ? coolIntent : `${tName0} over ${lo(nrp)} would read too orange, so the NRP is refined (partly neutralized) first.`;
+        chosen = `${baseLabel} 5 g of the shade. ${baseSentence}${temp==="cool"&&pair&&inRows.length===1&&mode==="auto"?` ${baseN} is the dominant of the pair (${baseN==="Green Base"?"green over blue":"blue over violet"}), so it is used on its own for the strongest ${lo(tName0)} result.`:""}`; }
+      else if(plan==="split"){ intent = temp==="cool" ? `${an(tName0)[0].toUpperCase()+an(tName0).slice(1)} ${lo(tName0)} result is cool, so the ${lo(nrp)} is neutralized and the reflection added on top.` : `Neutralizing with Pure Tones was chosen, so the ${lo(nrp)} is neutralized and the ${lo(tName0)} reflection added on top.`;
+        chosen = comps.length>1 ? `Half of the Pure Tone amount goes to ${neutPT} — ${th.pt} — and half to ${comps.filter(x=>x[1]!==neutPT).map(x=>nice(x[1])).join(" + ")||"the reflection"} for the reflection.` : `${neutPT} takes half the Pure Tone amount — ${th.pt}. ${tName0} has no ${isLight?"Light":"Dark"} Pure Tone at this shade, so there is no reflection to add.`; }
       else if(plan==="neut"){ intent=`A neutral result means the ${lo(nrp)} has to be fully neutralized.`; chosen=`${neutPT} does it: ${th.pt}.`; }
+      else if(exposure==="none"){ intent=`With no lift there is nothing to neutralize.`; chosen = comps.length ? `The shade deposits over the existing level and ${comps.map(x=>nice(x[1])).join(" + ")} adds the ${lo(tName0)} reflection.` : `The shade deposits over the existing level.`; }
       else if(temp==="warm"){ intent=`${tName0} is a warm result in the same family as the ${lo(nrp)}, so the NRP is enhanced rather than fought.`; chosen = ptName ? `Nothing is neutralized; the Pure Tone builds on the warmth the hair already has.` : `Nothing is neutralized. ${tName0} has no ${isLight?"Light":"Dark"} Pure Tone, so the shade goes on alone here.`; }
-      else { intent=`A ${lo(tName0)} result sits opposite the ${lo(nrp)} on the color wheel, so the reflection neutralizes it as it tones.`; chosen=`${ptName||"The Pure Tone"} is the neutralizer and the reflection at once: ${ptWhy(ptName)}.`; }
+      else if(inp.tone==="grey"){ intent=`Grey mutes rather than cancels: it softens the ${lo(nrp)} without adding a visible color.`; chosen=`Nothing else is neutralized in this formula.`; }
+      else { intent=`${an(tName0)[0].toUpperCase()+an(tName0).slice(1)} ${lo(tName0)} result sits opposite the ${lo(nrp)} on the color wheel, so the reflection neutralizes it as it tones.`; chosen = comps.length ? `${comps.map(x=>nice(x[1])).join(" + ")} is the neutralizer and the reflection at once${ptWhy(comps[0][1])?`: ${ptWhy(comps[0][1])}`:""}.` : `No Pure Tone is charted for ${shadeLabel}, so the shade goes on alone.`; }
       L.push(`<b>NRP.</b> ${exposed} ${intent} ${chosen}`);
     }
+    // --- Pure Tone ---
     if(ptStd>0 && !t.bare && !t.baseOnly && !t.ctrl && !(gy>0 && t.none)){
-      const comps=r.rows.filter(x=>!/\dN$|Base$/.test(x[1]) && !/N\/N$/.test(x[1]));
-      const parts=comps.map(x=>`${x[0]} ${x[1]} (${ptWhy(x[1])})`);
+      const parts=comps.map(x=>`${x[0]} ${nice(x[1])}${ptWhy(x[1])?` (${ptWhy(x[1])})`:""}`);
+      const neutInBlend = neutPT && comps.some(x=>x[1]===neutPT) && !(bl||[]).some(x=>x[0]===neutPT);
       const how = t.blend && blend.preset && PRESET_WHY[blend.preset] ? ` ${PRESET_WHY[blend.preset]}`
-        : t.blend && bl && bl.length>1 ? ` ${bl[0][0]} and ${bl[1][0]} sit next to each other on the wheel; mixed ${bl.map(x=>`${Math.round(x[1]*100)}%`).join(" / ")}, the result lands between them, closer to ${bl[0][0]}.${neutPT&&comps.some(x=>x[1]===neutPT)?` ${neutPT} is there to neutralize the NRP, not as part of the tone.`:""}`
-        : comps.length>1 ? ` The ${neutPT&&comps.some(x=>x[1]===neutPT)?"first cancels the NRP and the second":"two together"} create${comps.length>1?"":"s"} the ${lo(tName0)} reflection.`
+        : t.blend && bl && bl.length>1 ? ` ${bl[0][0]} and ${bl[1][0]} sit next to each other on the wheel; mixed ${bl.map(x=>`${Math.round(x[1]*100)}%`).join(" / ")}, the result lands between them, closer to ${bl[0][0]}.${neutInBlend?` ${neutPT} is there to neutralize the NRP, not as part of the tone.`:""}`
+        : comps.length>1 ? (neutInBlend ? ` The first neutralizes the NRP and the second creates the ${lo(tName0)} reflection.` : ` Together they create the ${lo(tName0)} reflection.`)
         : comps.length===1 ? ` That is what gives the ${lo(tName0)} reflection.` : "";
-      if(comps.length===0 && !ptName && !t.none) L.push(`<b>Pure Tone.</b> ${tName0} is only charted with ${isLight?"Light Pure Tones (8N–14N)":"Dark Pure Tones (4N–7N)"}, and this result lands on ${shadeLabel}, so no Pure Tone is charted. Choose a neighboring family for a reflection at this shade.`);
-      else if(comps.length===0) L.push(`<b>Pure Tone.</b> None in this formula: the result is neutral, so the base does the work. ${shadeLabel} would take ${g(ptStd)} of Pure Tone per 20 g if you want a reflection on top.`);
-      else L.push(`<b>Pure Tone.</b> ${shadeLabel} takes ${g(ptStd)} of Pure Tone per 20 g${t.vibrant?" on Red Base":""}: the lighter the shade, the less it needs. Here: ${parts.join("; ")}.${how}${k!==1?` The variables make this a ${k>1?"strong formula, so 50% more":"soft formula, so 50% less"} Pure Tone.`:""}`);
+      const strengthTxt = recipeK ? ` ${tName0} is defined as a ${kLabel(recipeK)} formula (${Math.round(recipeK*100)}% of the shade's Pure Tone amount).` : k!==1 && strength!=="auto" ? ` ${k>1?"Strong":"Soft"} intensity was chosen: ${k>1?"50% more":"50% less"} Pure Tone.` : k!==1 ? ` The variables make this a ${k>1?"strong formula, so 50% more":"soft formula, so 50% less"} Pure Tone.` : "";
+      const pigTxt = comps.some(x=>x[1].startsWith("Pure ")) && !(bl||[]).some(x=>x[0].startsWith("Pure ")) ? ` The Pure Pigment is added at half the shade's amount for intensity; in Deep it sits between a Light and a Dark Pure Tone in strength.` : "";
+      if(comps.length===0 && !ptName && !t.none) L.push(`<b>Pure Tone.</b> ${tName0} is only charted with ${isLight?"Dark Pure Tones (4N–7N)":"Light Pure Tones (8N–14N)"}, and this result lands on ${shadeLabel}, so no Pure Tone is charted. Choose a neighboring family for a reflection at this shade.`);
+      else if(comps.length===0) L.push(`<b>Pure Tone.</b> None in this formula: ${inRows.length?"the result is neutral, so the base does the work":"a neutral deposit"}. ${shadeLabel} would take ${g(ptStd)} of Pure Tone per 20 g if you want a reflection on top.`);
+      else L.push(`<b>Pure Tone.</b> ${t.vibrant?`The Vibrant Red series uses 4 g of Pure Tone on 20 g of base`:`${shadeLabel} takes ${g(ptStd)} of Pure Tone per 20 g: the lighter the shade, the less it needs`}. Here: ${parts.join("; ")}.${how}${strengthTxt}${pigTxt}`);
     }
-    L.push(`<b>Color Catalyst.</b> ${lifting?"Going lighter: 20 Volume, 30 minutes":"Going darker: 5 or 10 Volume, 20 minutes"}${dev.v!==(lifting?20:10)?`; the variables moved it to ${devLabel(dev.v)}`:dev.capped?`; the variables asked for more, but 20 Volume is the maximum on the scalp`:""}. Mixed 1:2 with the color: ${r.dev}.`);
-    L.push(`<b>Botanical Repair™.</b> ${r.additive?r.additive[0]+" ":""}Hair Strengthening Additive goes into every color formula (8 g per 40 g).`);
+    // --- Catalyst: from the formula itself ---
+    const devTxt=String(r.dev||""); const timeTxt=String(r.time||"");
+    const rule = gy>0 ? "Grey coverage processes with 20 Volume for up to 30 minutes" : t.vibrant||t.baseOnly ? "Red Base and the controlling bases lift on 20 Volume for 30 minutes" : lifting ? "Going lighter: 20 Volume, 30 minutes" : "Going darker: 5 or 10 Volume, 20 minutes";
+    const moved = dev.v!==(lifting?20:10) && !(gy>0) && !t.vibrant && !t.baseOnly ? `; the variables moved it to ${devLabel(dev.v)}` : dev.capped ? `; the variables asked for more, but 20 Volume is the maximum on the scalp` : "";
+    L.push(`<b>Color Catalyst.</b> ${rule}${moved}. Mixed 1:2 with the color: ${devTxt}${timeTxt&&!/^—/.test(timeTxt)?`, ${lo(timeTxt)}`:""}.`);
+    L.push(`<b>Botanical Repair™.</b> ${r.additive?r.additive[0]+" ":""}Professional Hair Strengthening Additive goes into every color formula (8 g per 40 g).`);
     return L; };
-  const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o}; r.treat=treatmentPlan(inp, r.rows, mult); r.additive=additiveFor(r.rows); if(r.alt) r.alt.additive=additiveFor(r.alt.rows);
+  const tidy=(ar)=>{ const out=[]; for(const [gs,name] of ar){ const v=parseFloat(gs); if(!(v>0)) continue; const i=out.findIndex(x=>x[1]===name); if(i>=0) out[i]=[g(parseFloat(out[i][0])+v),name]; else out.push([gs,name]); } return out; };
+  const done=(o)=>{ const r={...common, kicker, shade:shadeOut, rows, notes, why, warn, stop, alt:null, time, ...o}; r.rows=tidy(r.rows); if(r.alt){ r.alt.rows=tidy(r.alt.rows); if(!r.alt.kicker) r.alt.kicker="Alternative · Pure Tone route"; } r.treat=treatmentPlan(inp, r.rows, mult); r.additive=additiveFor(r.rows); if(r.alt) r.alt.additive=additiveFor(r.alt.rows);
     r.teach=teach(r);
     r.result=predictHex({n, d, nrp, rows:r.rows}); if(r.alt) r.alt.result=predictHex({n, d, nrp, rows:r.alt.rows}); return r; };
 
@@ -286,6 +311,7 @@ export function formulate(inp){
     if(isLight){ rows.push([g(10*mult),"Red Base"],[g(10*mult),"Bright Base"],[g(4*mult*k),pt]); catalystBase=(20+4*k)*mult; }
     else { rows.push([g(20*mult),"Red Base"],[g(4*mult*k),pt]); catalystBase=(20+4*k)*mult; }
     shadeOut=`${isLight?"Light":"Dark"} ${t.name.replace(" (Red Base)","")}`;
+    if(d<n) warn=`Red Base lifts to about level 7 and does not deposit darker, so it cannot give a level ${d} result on natural ${n}. For a darker red use the Natural Series Red/Red or Red/Violet family.`;
     why.push(`Vibrant Red series chart, ${isLight?"light":"dark"} row: ${isLight?"10 g Red Base + 10 g Bright Base":"20 g Red Base"} + 4 g ${pt}.`);
     notes.push("Red Base lifts on its own alkalinity to about level 7; the Natural Series shade from the chart is replaced, not added. For a lighter red, mix Red Base with 12N in equal parts.");
     notes.push("A higher Color Catalyst volume does not intensify red; it reduces saturation. Stay on 20 Volume.");
@@ -337,8 +363,8 @@ export function formulate(inp){
     kicker = cov==="max" ? "Grey coverage · maximum" : "Grey coverage · natural";
     // The pigmented hair still exposes NRP (pale yellow even at 100% grey), so grey coverage neutralizes it like any other
     // formula: a controlling base for neutral and cool results, Pure Tone when asked, nothing when the tone is warm (enhance).
-    const gLift=d>n; temp = t.none ? "neutral" : TEMP(inp.tone);
-    const gCovers = temp==="cool" && (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp);
+    const gLift=d>n; temp = t.none ? "neutral" : t.blend ? blendTemp(blend,isLight) : TEMP(inp.tone);
+    const gCovers = temp==="cool" && (t.blend ? (bl||[]).some(x=>(COUNTERS[x[2]]?.[isLight?"light":"dark"]||[]).includes(nrp)) : (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp));
     const gNeut=NEUT_PT[nrp]&&NEUT_PT[nrp][isLight?"light":"dark"]; const gBase=BASE_FOR_NRP(d);
     exposure = d-n>=3 ? "strong" : d-n>=1 ? "moderate" : "none";
     let gPlan="none";
@@ -373,7 +399,9 @@ export function formulate(inp){
     if(gy>=90) notes.push("With 90% or more grey, use maximum coverage with the shade's full N/N amount and consider a darker shade for depth; strand test.");
     else if(gy>=75) notes.push("With about 75% grey, lean on maximum coverage and the shade's full N/N amount; strand test.");
     notes.push("Bright Base is not recommended for grey coverage.");
-    return done({dev:`${ml(catalystBase*2)} · ${vol}`, time:"Up to 30 min, room temperature", alt:gAlt});
+    const gVol = lifting ? vol : "20 Volume"; if(gAlt) gAlt.dev = gAlt.dev.replace(/ · .*$/, ` · ${gVol}`);
+    if(!lifting) notes.push("Grey coverage processes on 20 Volume even when going darker or staying level (Reference Guide).");
+    return done({dev:`${ml(catalystBase*2)} · ${gVol}`, time:"Up to 30 min, room temperature", alt:gAlt});
   }
 
   /* ---- NRP handling ---- */
@@ -381,7 +409,7 @@ export function formulate(inp){
   temp = t.blend ? blendTemp(blend,isLight) : TEMP(inp.tone);
   const covers = temp==="cool" && (t.blend ? bl.some(x=>(COUNTERS[x[2]]?.[isLight?"light":"dark"]||[]).includes(nrp)) : (COUNTERS[inp.tone]?.[isLight?"light":"dark"]||[]).includes(nrp));
   if(recipeK) why.push(`${PRESETS[blend.preset].name} is defined as a ${kLabel(recipeK)} formula (${Math.round(recipeK*100)}% of the shade's Pure Tone amount); softening the Pure Tone is what makes the shade. Hair-variable bumps are not applied.`);
-  if(t.blend && blend.preset && PRESETS[blend.preset].levels && !PRESETS[blend.preset].levels.includes(d)) warn = warn || `${PRESETS[blend.preset].name} reads best at level${PRESETS[blend.preset].levels.length>1?"s":""} ${PRESETS[blend.preset].levels.join("–")}; at level ${d} expect a different balance of warmth and depth.`;
+  if(t.blend && blend.preset && PRESETS[blend.preset].levels && !PRESETS[blend.preset].levels.includes(d)) warn = warn || `${PRESETS[blend.preset].name} reads best at level${PRESETS[blend.preset].levels.length>1?"s":""} ${(l=>l.length>2?`${l[0]}–${l[l.length-1]}`:l.join(" and "))(PRESETS[blend.preset].levels)}; at level ${d} expect a different balance of warmth and depth.`;
   if(t.blend) why.push(`Blend: ${blend.preset?`${PRESETS[blend.preset].name} (recipe: ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(", ")}, ${PRESETS[blend.preset].nrp==="enhance"?"enhances":"neutralizes"} the NRP)`:`custom, ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(" + ")} from the wheel position`}${blend.k!=null?`; distance from the center sets the Pure Tone at ${Math.round(k*100)}% of the shade's amount${pigF>0&&pigF<2?` with Pure Pigment at ${Math.round(pigF*100)}%`:pigF>=2?" and the rim swaps in Pure Pigment at 200%":""}`:""}.`);
   const base=BASE_FOR_NRP(d);
   const pair=BASE_PAIR_FOR_NRP(nrp);
@@ -436,8 +464,10 @@ export function formulate(inp){
   if(plan==="none" && exposure!=="none" && temp!=="cool" && mode==="auto" && !t.none) notes.push(`If the result pulls too warm, swap to “Always neutralize with Pure Tones” to split in ${neutPT}, or add ${base}.`);
   if(!lifting) notes.push("Going darker is deposit only. If the hair has been lightened before, treat its warmth as exposed NRP: neutralize it with a base or Pure Tone, or replace it with a warm Pure Tone so the result does not go cool and flat.");
   if(shades.includes(14)) notes.push("14N gives an extra half level of lift on 20 Volume. Off the scalp, 30 Volume adds a half level and 40 Volume a full level.");
-  // Pure Tone route as the alternative to the controlling base
+  // Pure Tone route as the alternative to the controlling base; for "None" with lift, the base is the alternative
   let alt=null;
+  if(t.bare && exposure!=="none"){ const ar=[]; if(split) shades.forEach(s=>ar.push([g(7.5*mult),s+"N"])); else ar.push([g(15*mult),baseName[0]]); ar.push([g(5*mult),base]);
+    alt={kicker:"Alternative · controlling base", rows:ar, dev:`${ml(20*mult*2)} · ${vol}`, sub:`${base} replaces 5 g of the shade to neutralize the ${nrp.toLowerCase()} the lift exposes.`}; }
   if(mode==="auto" && (exposure==="moderate"||exposure==="strong") && plan==="base" && ptPlan && !(ptStd===0 && !split)){
     const altRows=[]; if(split) shades.forEach(s=>altRows.push([g(10*mult),s+"N"])); else altRows.push([g(20*mult),baseName[0]]);
     let sub="";

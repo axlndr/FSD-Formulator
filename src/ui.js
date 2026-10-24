@@ -245,7 +245,7 @@ function paint(from,to,toneHex){ for(const id of ["stripe","sheet"]){ const el=$
   $("stripe").style.backgroundImage=`url(${hairSwatch({from,to,w:360,h:44,sheen:false})})`; }
 function mixRows(rowsIn,dev,additive){
   const rows=rowsIn.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`);
-  if(rowsIn.length){ const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1]} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
+  if(rowsIn.length){ const d=dev.split(" · "); rows.push(`<tr><td>${d[0]}</td><td>${d[1].replace(/\s*\(.*\)$/,"")} Color Catalyst™ Conditioning Creme Developer</td></tr>`);
     if(additive) rows.push(`<tr class="add"><td>${additive[0]}</td><td>${additive[1]}</td></tr>`);
     const tot=rowsIn.reduce((a,r)=>a+parseFloat(r[0]),0)+(additive?parseFloat(additive[0]):0)+parseFloat(d[0]); rows.push(`<tr class="total"><td>${Math.round(tot)} ml</td><td>total color mixture</td></tr>`); }
   return rows.join("");
@@ -278,8 +278,9 @@ function drawChart(){
 /* ---------- Events ---------- */
 function formulaText(){
   const lines=[...$("outMix").querySelectorAll("tr")].map(tr=>[...tr.children].map(td=>td.textContent).join("  ")).join("\n");
+  const alt=$("outAlt").hidden?"":"\n\n"+$("outAltKicker").textContent+"\n"+$("outAltSub").textContent+"\n"+[...$("outAltMix").querySelectorAll("tr")].map(tr=>[...tr.children].map(td=>td.textContent).join("  ")).join("\n");
   const treat=$("outTreat").hidden?"":"\n\nBotanical Repair treatment ("+$("outTreatLevel").textContent+")\n"+[...$("outTreatSteps").children].map((li,i)=>`${i+1}. ${li.textContent}`).join("\n");
-  return `${$("outShade").textContent}\n${$("outSub").textContent}\n${lines}\n${$("outTime").textContent}${treat}`;
+  return `${$("outShade").textContent}\n${$("outSub").textContent}\n${lines}\n${$("outTime").textContent}${alt}${treat}`;
 }
 $("copy").addEventListener("click",()=>{
   navigator.clipboard.writeText(formulaText()).then(()=>{$("status").textContent="Copied.";}).catch(()=>{$("status").textContent="Select the formula to copy it.";});

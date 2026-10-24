@@ -123,11 +123,11 @@ test("a strong lift (3+ levels) bumps a soft formula to standard; a 1–2 level 
   has(run({ nl:"4", dl:"7", tone:"copper", texture:"0", htype:"0", density:"-1" }), "4 g Light O/Y");
   has(run({ nl:"4", dl:"6", tone:"copper", texture:"0", htype:"0", density:"-1" }), "4 g Light O/Y"); // 8N soft = 4 g
 });
-test("manual intensity: Soft, Standard, Strong, Intense (strong + nearest Pure Pigment at half the amount)", () => {
+test("manual intensity: Soft, Standard, Strong, Intense (deck: Pure Tone at the recommended amount plus half that amount of the nearest Pure Pigment)", () => {
   has(run({ nl:"4", dl:"7", tone:"copper", strength:"0.5" }), "2 g Light O/Y");
   has(run({ nl:"4", dl:"7", tone:"copper", strength:"1.5" }), "6 g Light O/Y");
   const r = run({ nl:"4", dl:"7", tone:"copper", strength:"2" });
-  has(r, "6 g Light O/Y"); has(r, "2 g Pure Orange");
+  has(r, "4 g Light O/Y"); has(r, "2 g Pure Orange");
 });
 
 /* ---------- Vibrant Reds and bases ---------- */
@@ -160,7 +160,7 @@ test("Butter is a soft Y/O by definition and neutralizes the NRP", () => {
   has(r, "5 g Violet Base"); has(r, "1 g Light Y/O");
 });
 test("recipes tagged with levels warn outside them", () => {
-  assert.match(run({ nl:"4", dl:"6", tone:"blend", blend:blend("milkchoc") }).warn, /reads best at levels 7–8/);
+  assert.match(run({ nl:"4", dl:"6", tone:"blend", blend:blend("milkchoc") }).warn, /reads best at levels 7 and 8/);
   assert.equal(run({ nl:"4", dl:"7", tone:"blend", blend:blend("milkchoc") }).warn, "");
 });
 test("wheel radius: center is softest, inner ring standard, pigment rises toward the edge, rim replaces at 200%", () => {
@@ -225,12 +225,12 @@ test("formulate attaches a result color to the formula and its alternative", () 
 test("Botanical Repair color treatment plan follows the Reference Guide", () => {
   const base={nl:"5",dl:"8",tone:"copper",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
   const r=formulate({...base,porosity:"high",htype:"-1"});
-  assert.equal(r.treat.level,"highly recommended"); assert.deepEqual(r.additive,["4.5 g","Botanical Repair™ Hair Strengthening Additive"]);
+  assert.equal(r.treat.level,"highly recommended"); assert.deepEqual(r.additive,["4.5 g","Botanical Repair™ Professional Hair Strengthening Additive"]);
   assert.match(r.treat.steps[0],/5 ml Botanical Repair™ Professional Equalizing Primer/);
   assert.match(r.treat.steps[1],/4\.5 g of Botanical Repair™ Professional Hair Strengthening Additive shown in the formula into the 23 g of color \(8 g per 40 g\)/);
-  assert.match(r.treat.steps[4],/Bond Activator Light, process 10 minutes/);
+  assert.match(r.treat.steps[4],/Bond Activator: Light\. Process 10 minutes/);
   const m=formulate({...base,porosity:"medium",htype:"1"});
-  assert.equal(m.treat.level,"recommended"); assert.match(m.treat.steps[4],/Bond Activator Rich/);
+  assert.equal(m.treat.level,"recommended"); assert.match(m.treat.steps[4],/Bond Activator: Rich/);
   const c=formulate({...base,porosity:"compromised"});
   assert.equal(c.treat.level,"highly recommended"); assert.match(c.treat.lead,/Highly recommended on compromised hair/); assert.match(c.treat.lead,/Restorative Treatment/); assert.ok(c.notes.some(n=>/takes color fast and unevenly/.test(n)));
   const l=formulate({...base,porosity:"low"});
@@ -240,7 +240,7 @@ test("Botanical Repair color treatment plan follows the Reference Guide", () => 
 test("every formula carries the Strengthening Additive at 8 g per 40 g of color", () => {
   const base={nl:"3",dl:"6",tone:"imatte",grey:"0",cov:"natural",strength:"auto",batch:"1",nrpMode:"auto",texture:"",htype:"",density:"",scalp:"on",blend:{preset:null,ang:30,k:null,pigF:0,vivid:false}};
   const r=formulate(base); // 15 g 9N + 5 g Green Base + 6 g Light G/G = 26 g color
-  assert.deepEqual(r.additive,["5 g","Botanical Repair™ Hair Strengthening Additive"]);
+  assert.deepEqual(r.additive,["5 g","Botanical Repair™ Professional Hair Strengthening Additive"]);
   if(r.alt) assert.ok(r.alt.additive);
 });
 
