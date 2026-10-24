@@ -1,6 +1,6 @@
 // Pure formulation logic: inputs in, formula out. No DOM access, so it can be tested on its own.
 import { GRID, shadeFor, DERIVED, PT_GRAMS, NRP, BASE_FOR_NRP, NEUT_PT, COUNTERS, TEMP, TONES,
-         RINGS, ringFor, WARM_KEYS, PRESETS, PIGMENTS, PT_FAM, pigScale } from "./data.js";
+         RINGS, ringFor, WARM_KEYS, PRESETS, PRESET_WHY, PIGMENTS, PT_FAM, pigScale } from "./data.js";
 
 /* ---------- Developer ---------- */
 export const LADDER=[5,10,15,20,25,30,40];
@@ -247,7 +247,8 @@ export function formulate(inp){
     if(ptStd>0 && !t.bare && !t.baseOnly && !t.ctrl && !(gy>0 && t.none)){
       const comps=r.rows.filter(x=>!/\dN$|Base$/.test(x[1]) && !/N\/N$/.test(x[1]));
       const parts=comps.map(x=>`${x[0]} ${x[1]} (${ptWhy(x[1])})`);
-      const how = comps.length>1 && t.blend ? ` Together they build the ${lo(tName0)}: ${bl.map(x=>`${Math.round(x[1]*100)}% ${x[0]}`).join(", ")} — the larger share sets the direction and the smaller shares shift it.`
+      const how = t.blend && blend.preset && PRESET_WHY[blend.preset] ? ` ${PRESET_WHY[blend.preset]}`
+        : t.blend && comps.length>1 ? ` ${comps[0][1]} and ${comps[1][1]} sit next to each other on the wheel; mixed ${bl.map(x=>`${Math.round(x[1]*100)}%`).join(" / ")}, the result lands between them, closer to ${comps[0][1]}.`
         : comps.length>1 ? ` The ${neutPT&&comps.some(x=>x[1]===neutPT)?"first cancels the NRP and the second":"two together"} create${comps.length>1?"":"s"} the ${lo(tName0)} reflection.`
         : comps.length===1 ? ` That is what gives the ${lo(tName0)} reflection.` : "";
       if(comps.length===0) L.push(`<b>Pure Tone.</b> None in this formula: the result is neutral, so the base does the work. ${shadeLabel} would take ${g(ptStd)} of Pure Tone per 20 g if you want a reflection on top.`);

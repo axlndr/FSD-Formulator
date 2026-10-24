@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { formulate, predictHex, devChoice, blendFromAngle, kFromR, pigFromR } from "../src/formulate.js";
-import { GRID, PRESETS, TONES, RINGS, PIGMENTS, PT_GRAMS } from "../src/data.js";
+import { GRID, PRESETS, TONES, RINGS, PIGMENTS, PT_GRAMS, PRESET_WHY } from "../src/data.js";
 
 const base = { grey:"0", cov:"natural", strength:"auto", batch:"1", nrpMode:"auto", texture:"", htype:"", density:"", scalp:"on" };
 const run = (o) => formulate({ ...base, ...o });
@@ -248,4 +248,8 @@ test("grey with lift: NRP is named in the walkthrough; warm tones enhance, cool 
   const w=formulate({...base,tone:"copper"}); assert.ok(!w.rows.some(x=>/Base$/.test(x[1]))); assert.ok(w.teach.some(x=>/warm tone, so the NRP is enhanced/.test(x)));
   const c=formulate({...base,tone:"imatte",nl:"3"}); assert.ok(c.rows.some(x=>x[1]==="Green Base") && c.rows.some(x=>x[1]==="Light N/N") && c.rows.some(x=>x[1]==="Light G/G"));
   const nolift=formulate({...base,nl:"6",dl:"6"}); assert.ok(!nolift.rows.some(x=>/Base$/.test(x[1])));
+});
+
+test("every Custom preset has a written explanation", () => {
+  for(const k of Object.keys(PRESETS)) assert.ok(PRESET_WHY[k] && PRESET_WHY[k].length>20, k);
 });

@@ -112,7 +112,7 @@ const FAMS=ORDER.map(g=>g==="Matte-Olive"?{g,label:"Matte"}:g==="Neutral-Beige"?
 let openFam=null;
 { const picker=$("tonePicker");
   picker.innerHTML=`<div class="tp">
-    <div class="preview"><i class="ball big" id="tpBall" style="--c:#c9c3bd"></i><div class="pname" id="tpName">Choose a tone</div><div class="pfam" id="tpFam">Pick a family, then a colour</div></div>
+    <div class="preview"><i class="ball big" id="tpBall" style="--c:#c9c3bd"></i><div class="pname" id="tpName">Choose a tone</div><div class="pfam" id="tpFam"></div></div>
     <div class="fams" id="fams">${FAMS.map(f=>`<button type="button" class="fam" data-fam="${f.g}" aria-pressed="false">${f.label}</button>`).join("")}</div>
     <div class="strip" id="strip" hidden></div>
   </div>`;
@@ -136,9 +136,9 @@ function syncPicker(){
   else strip.hidden=true;
   // preview
   const ball=$("tpBall"), name=$("tpName"), fam=$("tpFam");
-  if(t && t.blend){ const pr=blend.preset&&PRESETS[blend.preset]; ball.style.setProperty("--c", pr?vivid(pr.hex):"#b89a84"); ball.classList.toggle("multi",!pr); name.textContent=pr?pr.name:"Custom tone"; fam.textContent=pr?"Custom":"Set on the colour wheel below"; }
+  if(t && t.blend){ const pr=blend.preset&&PRESETS[blend.preset]; ball.style.setProperty("--c", pr?vivid(pr.hex):"#b89a84"); ball.classList.toggle("multi",!pr); name.textContent=pr?pr.name:"Custom tone"; fam.textContent="Custom"; }
   else if(t){ ball.style.setProperty("--c",vivid(t.hex)); ball.classList.remove("multi"); name.textContent=(SHORT[tone.value]||t.name).replace(/:.*$/,""); fam.textContent=FAMS.find(f=>f.g===t.group)?.label||t.group; }
-  else { ball.style.setProperty("--c","#c9c3bd"); ball.classList.remove("multi"); name.textContent="Choose a tone"; fam.textContent="Pick a family, then a colour"; }
+  else { ball.style.setProperty("--c","#c9c3bd"); ball.classList.remove("multi"); name.textContent="Choose a tone"; fam.textContent=""; }
   $("blendPanel").hidden = tone.value!=="blend";
   const isNone = tone.value==="bare"; $("noneToggle").setAttribute("aria-pressed",String(isNone)); $("toneMode").setAttribute("aria-pressed",String(!isNone)); $("tonePicker").hidden=isNone; }
 
