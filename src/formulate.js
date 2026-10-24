@@ -111,14 +111,19 @@ export function predictHex({n,d,nrp,rows}){
   const nat=rows.filter(r=>/^\d+N$/.test(r[1])); const natG=nat.reduce((a,r)=>a+parseFloat(r[0]),0);
   const base=_hex2rgb(levelHex(d)); // the result lands at the desired level; the shade chosen is how it gets there
   const baseG=Math.max(10, natG + rows.filter(r=>/Base$/.test(r[1])).reduce((a,r)=>a+parseFloat(r[0]),0));
+  // Pure Tone effect is judged against the shade's standard amount (standard = a standard reflection at any level) and shows
+  // more on lighter levels, where there is less natural pigment to compete with.
+  const shadeNums=nat.map(r=>parseInt(r[1])).filter(Number.isFinite);
+  const stdPT=Math.max(1, shadeNums.length ? shadeNums.reduce((a,x)=>a+(PT_GRAMS[x]||4),0)/shadeNums.length : 4) * (baseG/20);
+  const lightF=0.75+ (Math.max(1,Math.min(10,d))-1)/9*0.95; // level 1 → 0.75, level 10 → 1.7
   const lift=d-n; let wN = lift>=3 ? .4 : lift>0 ? .26 : .12;
   const nrpHex=NRP_HEX[nrp]||"#c4661f"; const nrpHue=_hsl(_hex2rgb(nrpHex))[0];
   const tints=[];
   for(const [gs,name] of rows){ const g=parseFloat(gs); const hex=componentHex(name); if(!hex||!(g>0)) continue;
-    if(BASE_HEX[name]){ wN*=Math.max(0, 1-(g/baseG)*3.2); tints.push([hex,Math.min(.14,(g/baseG)*.5)]); continue; }
+    if(BASE_HEX[name]){ wN*=Math.max(0, 1-(g/baseG)*3.2); tints.push([hex,Math.min(.22,(g/baseG)*.5*lightF)]); continue; }
     const hue=_hsl(_hex2rgb(hex))[0]; const opp=_hueDist(hue,(nrpHue+180)%360)<50;
     const pig=name.startsWith("Pure "); const dark=name.startsWith("Dark ");
-    let w=Math.min(.5,(g/baseG)*(name==="Red Base"?1.3:pig?2.0:dark?1.8:1.4));
+    let w = name==="Red Base" ? Math.min(.55,(g/baseG)*1.3) : Math.min(.6,(g/stdPT)*0.3*(pig?1.5:dark?1.3:1)*lightF);
     if(opp){ wN*=Math.max(0,1-w*2.2); w*=.45; }
     tints.push([hex,w]); }
   let c=_lerp(base,_hex2rgb(nrpHex),Math.max(0,Math.min(.45,wN)));
